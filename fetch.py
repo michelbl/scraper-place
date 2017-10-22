@@ -58,6 +58,7 @@ def fetch_data(link_annonce):
     links_reglement = extract_links(r, reglement_regex)
     assert len(links_reglement) == 1
     link_reglement = links_reglement[0]
+    reglement_ref = re.match(reglement_regex, link_reglement).groups()[0]
     url_reglement = 'https://www.marches-publics.gouv.fr/' + link_reglement
     r_reglement = requests.get(url_reglement)
     assert r.status_code == 200
@@ -96,7 +97,7 @@ def fetch_data(link_annonce):
     dce = r.content
 
     
-    return link_boamp, reference, intitule, objet, filename_reglement, reglement, filename_dce, dce
+    return annonce_id, org_acronym, link_boamp, reference, intitule, objet, reglement_ref, filename_reglement, reglement, filename_dce, dce
     
     
 def init():
