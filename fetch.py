@@ -40,12 +40,11 @@ def fetch_data(link_annonce):
     page_state = re.search(page_state_regex, r.text).groups()[0]
     
     
-    # Get textual data
+    # Get text data
     
     links_boamp = extract_links(r, boamp_regex)
     unique_boamp = list(set(links_boamp))
-    assert len(unique_boamp) == 1
-    link_boamp = unique_boamp[0]
+    links_boamp = unique_boamp
 
     soup = BeautifulSoup(r.text, 'html.parser')
     reference = soup.find(id="ctl0_CONTENU_PAGE_idEntrepriseConsultationSummary_reference").string
@@ -53,21 +52,69 @@ def fetch_data(link_annonce):
     objet = soup.find(id="ctl0_CONTENU_PAGE_idEntrepriseConsultationSummary_objet").string
     
     
+    # Get avis
+    
+    link_avis = soup.find(id="ctl0_CONTENU_PAGE_repeaterAvis_ctl1_linkDownloadAvis")
+    if link_avis.parent.parent.attrs['style'] == 'display:none':
+        filename_avis = None
+        avis = None
+    else:
+        data = {
+            'PRADO_PAGESTATE': page_state,
+            'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$repeaterAvis$ctl1$linkDownloadAvis',
+        }
+        r = requests.post(url_annonce, data=data)
+        assert r.status_code == 200
+
+        content_type = r.headers['Content-Type']
+        assert content_type in {'application/octet-stream', 'application/zip'}, content_type
+        regex_attachment = r'^attachment; filename="([^"]+)";$'
+        filename_avis = re.match(regex_attachment, r.headers['Content-Disposition']).groups()[0]
+        avis = r.content
+
+    
     # Fetch reglement
     
     links_reglement = extract_links(r, reglement_regex)
-    assert len(links_reglement) == 1
-    link_reglement = links_reglement[0]
-    reglement_ref = re.match(reglement_regex, link_reglement).groups()[0]
-    url_reglement = 'https://www.marches-publics.gouv.fr/' + link_reglement
-    r_reglement = requests.get(url_reglement)
-    assert r.status_code == 200
-    assert r_reglement.headers['Content-Type'] == 'application/octet-stream'
-    regex_attachment = r'^attachment; filename="([^"]+)";$'
-    filename_reglement = re.match(regex_attachment, r_reglement.headers['Content-Disposition']).groups()[0]
-    reglement = r_reglement.content
-    
+    if len(links_reglement) == 0:
+        filename_reglement = None
+        reglement = None
+        reglement_ref = None
+    else:
+        assert len(links_reglement) == 1
+        link_reglement = links_reglement[0]
+        reglement_ref = re.match(reglement_regex, link_reglement).groups()[0]
+        url_reglement = 'https://www.marches-publics.gouv.fr/' + link_reglement
+        r_reglement = requests.get(url_reglement)
+        assert r.status_code == 200
+        content_type = r_reglement.headers['Content-Type']
+        assert content_type == 'application/octet-stream', content_type
+        regex_attachment = r'^attachment; filename="([^"]+)";$'
+        filename_reglement = re.match(regex_attachment, r_reglement.headers['Content-Disposition']).groups()[0]
+        reglement = r_reglement.content
 
+    
+    # Fetch complement
+
+    link_complement = soup.find(id="ctl0_CONTENU_PAGE_linkDownloadComplement")
+    if link_complement.parent.attrs['style'] == 'display:none':
+        filename_complement = None
+        complement = None
+    else:
+        data = {
+            'PRADO_PAGESTATE': page_state,
+            'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$linkDownloadComplement',
+        }
+        r = requests.post(url_annonce, data=data)
+        assert r.status_code == 200
+
+        content_type = r.headers['Content-Type']
+        assert content_type in {'application/octet-stream', 'application/zip'}, content_type
+        regex_attachment = r'^attachment; filename="([^"]+)";$'
+        filename_complement = re.match(regex_attachment, r.headers['Content-Disposition']).groups()[0]
+        complement = r.content
+
+    
     # Get Dossier de Consultation aux Entreprises
     
     url_dce = 'https://www.marches-publics.gouv.fr/index.php?page=entreprise.EntrepriseDemandeTelechargementDce&refConsultation={}&orgAcronyme={}'.format(annonce_id, org_acronym)
@@ -91,13 +138,14 @@ def fetch_data(link_annonce):
     r = requests.post(url_dce, data=data)
     assert r.status_code == 200
 
-    assert r.headers['Content-Type'] == 'application/zip'
+    content_type = r.headers['Content-Type']
+    assert content_type == 'application/zip', content_type
     regex_attachment = r'^attachment; filename="([^"]+)";$'
     filename_dce = re.match(regex_attachment, r.headers['Content-Disposition']).groups()[0]
     dce = r.content
 
     
-    return annonce_id, org_acronym, link_boamp, reference, intitule, objet, reglement_ref, filename_reglement, reglement, filename_dce, dce
+    return annonce_id, org_acronym, links_boamp, reference, intitule, objet, reglement_ref, filename_reglement, reglement, filename_complement, complement, filename_avis, avis, filename_dce, dce
     
     
 def init():
