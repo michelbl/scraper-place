@@ -5,3 +5,7 @@ port=1234
 name=place
 username=place
 password=***
+
+[file_storage]
+
+dir=/home/michel/scraper-place/files

@@ -88,7 +88,7 @@ def fetch_data(link_annonce):
         r_reglement = requests.get(url_reglement)
         assert r.status_code == 200
         content_type = r_reglement.headers['Content-Type']
-        assert content_type == 'application/octet-stream', content_type
+        assert content_type in {'application/octet-stream', 'application/zip'}, content_type
         regex_attachment = r'^attachment; filename="([^"]+)";$'
         filename_reglement = re.match(regex_attachment, r_reglement.headers['Content-Disposition']).groups()[0]
         reglement = r_reglement.content
