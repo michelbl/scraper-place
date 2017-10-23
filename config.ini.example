@@ -11,3 +11,4 @@ password=***
 dir=/home/michel/scraper-place/files
 tmp_dir=/home/michel/scraper-place/tmp
 target_dir=/home/michel/scraper-place/target
+archive_dir=/home/michel/scraper-place/archive
