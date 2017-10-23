@@ -1,4 +1,5 @@
 import re
+from collections import Counter
 
 import requests
 from bs4 import BeautifulSoup
@@ -26,7 +27,9 @@ def fetch_current_annonces():
     all_links = []
     for links in links_by_page:
         all_links += links
-    assert len(all_links) == len(set(all_links))
+    if len(all_links) != len(set(all_links)):
+        duplicates = [k for k, v in Counter(all_links).items() if v > 1]
+        print('Warning: {} found multiple times'.format(duplicates))
     
     return all_links
 
@@ -116,33 +119,38 @@ def fetch_data(link_annonce):
 
     
     # Get Dossier de Consultation aux Entreprises
-    
-    url_dce = 'https://www.marches-publics.gouv.fr/index.php?page=entreprise.EntrepriseDemandeTelechargementDce&refConsultation={}&orgAcronyme={}'.format(annonce_id, org_acronym)
-    r = requests.get(url_dce)
-    assert r.status_code == 200
-    page_state = re.search(page_state_regex, r.text).groups()[0]
-    
-    data = {
-        'PRADO_PAGESTATE': page_state,
-        'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$validateButton',
-        'ctl0$CONTENU_PAGE$EntrepriseFormulaireDemande$RadioGroup': 'ctl0$CONTENU_PAGE$EntrepriseFormulaireDemande$choixAnonyme',
-    }
-    r = requests.post(url_dce, data=data)
-    assert r.status_code == 200
-    page_state = re.search(page_state_regex, r.text).groups()[0]
 
-    data = {
-        'PRADO_PAGESTATE': page_state,
-        'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$EntrepriseDownloadDce$completeDownload',
-    }
-    r = requests.post(url_dce, data=data)
-    assert r.status_code == 200
+    link_dce = soup.find(id="ctl0_CONTENU_PAGE_linkDownloadDce")
+    if link_dce.parent.parent.attrs['style'] == 'display:none':
+        filename_dce = None
+        dce = None
+    else:
+        url_dce = 'https://www.marches-publics.gouv.fr/index.php?page=entreprise.EntrepriseDemandeTelechargementDce&refConsultation={}&orgAcronyme={}'.format(annonce_id, org_acronym)
+        r = requests.get(url_dce)
+        assert r.status_code == 200
+        page_state = re.search(page_state_regex, r.text).groups()[0]
 
-    content_type = r.headers['Content-Type']
-    assert content_type == 'application/zip', content_type
-    regex_attachment = r'^attachment; filename="([^"]+)";$'
-    filename_dce = re.match(regex_attachment, r.headers['Content-Disposition']).groups()[0]
-    dce = r.content
+        data = {
+            'PRADO_PAGESTATE': page_state,
+            'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$validateButton',
+            'ctl0$CONTENU_PAGE$EntrepriseFormulaireDemande$RadioGroup': 'ctl0$CONTENU_PAGE$EntrepriseFormulaireDemande$choixAnonyme',
+        }
+        r = requests.post(url_dce, data=data)
+        assert r.status_code == 200
+        page_state = re.search(page_state_regex, r.text).groups()[0]
+
+        data = {
+            'PRADO_PAGESTATE': page_state,
+            'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$EntrepriseDownloadDce$completeDownload',
+        }
+        r = requests.post(url_dce, data=data)
+        assert r.status_code == 200
+
+        content_type = r.headers['Content-Type']
+        assert content_type == 'application/zip', content_type
+        regex_attachment = r'^attachment; filename="([^"]+)";$'
+        filename_dce = re.match(regex_attachment, r.headers['Content-Disposition']).groups()[0]
+        dce = r.content
 
     
     return annonce_id, org_acronym, links_boamp, reference, intitule, objet, reglement_ref, filename_reglement, reglement, filename_complement, complement, filename_avis, avis, filename_dce, dce
