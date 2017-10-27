@@ -13,13 +13,18 @@ reglement_regex = r'^index\.php\?page=entreprise\.EntrepriseDownloadReglement&re
 boamp_regex = r'^http://www\.boamp\.fr/index\.php/avis/detail/([\d-]+)$'
 
 
-def fetch_current_annonces():
+def fetch_current_annonces(nb_pages=0):
+    """
+    nb_pages: number of pages to fetch, 0 to set no limit
+    """
     links_by_page = []
     page_state = None
     try:
-        while(True):
+        counter = 0
+        while (nb_pages == 0) or (counter < nb_pages):
             links, page_state = next_page(page_state)
             links_by_page.append(links)
+            counter += 1
 
     except NoMoreResultsException:
         pass

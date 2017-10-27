@@ -106,7 +106,7 @@ def process_link(link, connection, cursor):
     connection.commit()
 
 
-links = fetch.fetch_current_annonces()
+links = fetch.fetch_current_annonces(nb_pages=0)  # Set to 1 for a developpement setup
 
 
 for link in links:
