@@ -34,7 +34,8 @@ def fetch_current_annonces(nb_pages=0):
         all_links += links
     if len(all_links) != len(set(all_links)):
         duplicates = [k for k, v in Counter(all_links).items() if v > 1]
-        print('Warning: {} found multiple times'.format(duplicates))
+        nb_duplicates = len(duplicates)
+        print('Warning: {} DCE found multiple times'.format(nb_duplicates))
     
     return all_links
 
