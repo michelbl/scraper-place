@@ -34,24 +34,26 @@ cursor = connection.cursor()
 
 
 def process_link(link, connection, cursor):
+    """
+    process_link : Download data and store it in database.
+    Return the number of stored DCE (0 or 1).
+    """
     annonce_id, org_acronym = re.match(fetch.link_regex, link).groups()
     
     cursor.execute("SELECT annonce_id, org_acronym FROM dce WHERE annonce_id = %s AND org_acronym = %s;", (annonce_id, org_acronym))
     results = cursor.fetchall()
     
     if results:
-        return
-    
-    print("Info: Processing {}".format(link))
-    
+        return 0
+
     try:
         (annonce_id, org_acronym, links_boamp,
             reference, intitule, objet, reglement_ref,
             filename_reglement, reglement, filename_complement,
             complement, filename_avis, avis, filename_dce, dce) = fetch.fetch_data(link)
     except Exception as e:
-        print("Warning: exception occured ({})".format(e))
-        return
+        print("Warning: exception occured ({}) : {}".format(e, link))
+        return 0
     
     now = datetime.datetime.now()
     
@@ -104,13 +106,15 @@ def process_link(link, connection, cursor):
             )
         )
     connection.commit()
+    return 1
 
 
 links = fetch.fetch_current_annonces(nb_pages=0)  # Set to 1 for a developpement setup
 
-
+nb_processed = 0
 for link in links:
-    process_link(link, connection, cursor)
+    nb_processed += process_link(link, connection, cursor)
+print("Info: Processed {} DCE".format(nb_processed))    
 
 cursor.close()
 connection.close()
