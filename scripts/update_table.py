@@ -25,7 +25,7 @@ database_password = config['database']['password']
 assert database_host == 'localhost'
 assert database_port == '1234'
 
-file_storage_dir = config['file_storage']['dir']
+vestibule_directory = config['file_storage']['vestibule_directory']
 
 
 # Open connection
@@ -60,28 +60,28 @@ def process_link(link, connection, cursor):
     if reglement:
         extention = os.path.splitext(filename_reglement)[1]
         filename = '{}-{}-reglement{}'.format(annonce_id, org_acronym, extention)
-        filepath = os.path.join(file_storage_dir, filename)
+        filepath = os.path.join(vestibule_directory, filename)
         with open(filepath, 'wb') as f:
             f.write(reglement)
     
     if avis:
         extention = os.path.splitext(filename_avis)[1]
         filename = '{}-{}-avis{}'.format(annonce_id, org_acronym, extention)
-        filepath = os.path.join(file_storage_dir, filename)
+        filepath = os.path.join(vestibule_directory, filename)
         with open(filepath, 'wb') as f:
             f.write(avis)
     
     if complement:
         extention = os.path.splitext(filename_complement)[1]
         filename = '{}-{}-complement{}'.format(annonce_id, org_acronym, extention)
-        filepath = os.path.join(file_storage_dir, filename)
+        filepath = os.path.join(vestibule_directory, filename)
         with open(filepath, 'wb') as f:
             f.write(complement)
     
     if dce:
         extention = os.path.splitext(filename_dce)[1]
         filename = '{}-{}-dce{}'.format(annonce_id, org_acronym, extention)
-        filepath = os.path.join(file_storage_dir, filename)
+        filepath = os.path.join(vestibule_directory, filename)
         with open(filepath, 'wb') as f:
             f.write(dce)
     
@@ -109,7 +109,7 @@ def process_link(link, connection, cursor):
     return 1
 
 
-links = fetch.fetch_current_annonces(nb_pages=0)  # Set to 1 for a developpement setup
+links = fetch.fetch_current_annonces(nb_pages=1)  # Set to 1 for a developpement setup
 
 nb_processed = 0
 for link in links:

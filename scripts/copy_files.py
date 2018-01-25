@@ -30,23 +30,23 @@ database_password = config['database']['password']
 assert database_host == 'localhost'
 assert database_port == '1234'
 
-file_storage_dir = config['file_storage']['dir']
-file_storage_tmp_dir = config['file_storage']['tmp_dir']
-file_storage_target_dir = config['file_storage']['target_dir']
-file_storage_archive_dir = config['file_storage']['archive_dir']
+vestibule_directory = config['file_storage']['vestibule_directory']
+tmp_directory = config['file_storage']['tmp_directory']
+public_directory = config['file_storage']['public_directory']
+archive_directory = config['file_storage']['archive_directory']
 file_storage_badfiles_dir = config['file_storage']['badfiles_dir']
-len_tmp_dir = len(file_storage_tmp_dir) + 1
+len_tmp_dir = len(tmp_directory) + 1
 
 regex_basename = r'^([^-]+)-([^-]+)-([^-]+)$'
 
 
 def process_file(source_filename):
     basename, ext = os.path.splitext(source_filename)
-    source_filepath = os.path.join(file_storage_dir, source_filename)
+    source_filepath = os.path.join(vestibule_directory, source_filename)
 
     
     if ext == '.zip':
-        os.mkdir(file_storage_tmp_dir)
+        os.mkdir(tmp_directory)
         try:
             process_archive(source_filename)
         except ZipFileException as e:
@@ -55,15 +55,15 @@ def process_file(source_filename):
             os.rename(source_filepath, badfiles_filepath)
         else:
             archive_file(source_filename)
-        shutil.rmtree(file_storage_tmp_dir, ignore_errors=True)
+        shutil.rmtree(tmp_directory, ignore_errors=True)
     else:        
         archive_file(source_filename)
 
 
 def archive_file(source_filename):
     basename, ext = os.path.splitext(source_filename)
-    source_filepath = os.path.join(file_storage_dir, source_filename)
-    archive_filepath = os.path.join(file_storage_archive_dir, source_filename)
+    source_filepath = os.path.join(vestibule_directory, source_filename)
+    archive_filepath = os.path.join(archive_directory, source_filename)
 
     copy_archive(basename, ext)
 
@@ -76,18 +76,18 @@ class ZipFileException(Exception):
 
 def process_archive(source_filename):
     basename, ext = os.path.splitext(source_filename)
-    source_filepath = os.path.join(file_storage_dir, source_filename)
+    source_filepath = os.path.join(vestibule_directory, source_filename)
 
     try:
         with zipfile.ZipFile(source_filepath, "r") as zip_ref:
-            zip_ref.extractall(file_storage_tmp_dir)
+            zip_ref.extractall(tmp_directory)
     except (zipfile.BadZipFile, UnicodeDecodeError) as e:
         raise ZipFileException(str(e))
 
 
-    new_filepaths = glob.glob(file_storage_tmp_dir + '/**', recursive=True)
+    new_filepaths = glob.glob(tmp_directory + '/**', recursive=True)
     for new_filepath in new_filepaths:
-        assert new_filepath[:len_tmp_dir] == file_storage_tmp_dir + '/'
+        assert new_filepath[:len_tmp_dir] == tmp_directory + '/'
         variable_part = new_filepath[len_tmp_dir:]
 
         if os.path.islink(new_filepath):
@@ -101,7 +101,7 @@ def process_archive(source_filename):
 
 
 def create_dir(basename, variable_part):
-    target_path = os.path.join(file_storage_target_dir, basename, variable_part)
+    target_path = os.path.join(public_directory, basename, variable_part)
     os.makedirs(target_path, exist_ok=True)
     
     annonce_id, org_acronym, document_type = re.match(regex_basename, basename).groups()
@@ -138,8 +138,8 @@ def create_dir(basename, variable_part):
 def copy_file(basename, variable_part):
     create_dir(basename, os.path.dirname(variable_part))
 
-    source_filepath = os.path.join(file_storage_tmp_dir, variable_part)
-    target_filepath = os.path.join(file_storage_target_dir, basename, variable_part)
+    source_filepath = os.path.join(tmp_directory, variable_part)
+    target_filepath = os.path.join(public_directory, basename, variable_part)
     shutil.copyfile(source_filepath, target_filepath)
 
     annonce_id, org_acronym, document_type = re.match(regex_basename, basename).groups()
@@ -161,8 +161,8 @@ def copy_file(basename, variable_part):
 
 def copy_archive(basename, ext):
     source_filename = basename + ext
-    source_filepath = os.path.join(file_storage_dir, source_filename)
-    target_filepath = os.path.join(file_storage_target_dir, source_filename)
+    source_filepath = os.path.join(vestibule_directory, source_filename)
+    target_filepath = os.path.join(public_directory, source_filename)
     shutil.copyfile(source_filepath, target_filepath)
 
     annonce_id, org_acronym, document_type = re.match(regex_basename, basename).groups()
@@ -187,7 +187,7 @@ def copy_archive(basename, ext):
 connection = psycopg2.connect(dbname=database_name, user=database_username, password=database_password)
 cursor = connection.cursor()
 
-source_filenames = os.listdir(file_storage_dir)
+source_filenames = os.listdir(vestibule_directory)
 
 for source_filename in source_filenames:
     process_file(source_filename)

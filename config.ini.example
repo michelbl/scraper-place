@@ -8,8 +8,8 @@ password=***
 
 [file_storage]
 
-dir=/home/michel/scraper-place/files
-tmp_dir=/home/michel/scraper-place/tmp
-target_dir=/home/michel/scraper-place/target
-archive_dir=/home/michel/scraper-place/archive
-badfiles_dir=/home/michel/scraper-place/badfiles
+vestibule_directory=/home/michel/scraper-place/data/vestibule
+tmp_directory=/home/michel/scraper-place/data/tmp
+public_directory=/home/michel/scraper-place/data/public
+archive_directory=/home/michel/scraper-place/data/archive
+badfiles_dir=/home/michel/scraper-place/data/badfiles

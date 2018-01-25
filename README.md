@@ -28,9 +28,9 @@ Curiously, a small fraction of the DCE appear in several pages, and this is not 
 
 ## Usage
 
-* Run `update_tables.py` to scrap PLACE and update the local table `dce`. The files are stored in `dir` (see `config.ini`). You can set the optional parameter `nb_pages` to 1 in the call of `fetch.fetch_current_annonces()` for a developpement setup.
+* Run `update_tables.py` to scrap PLACE and update the local table `dce`. The files are stored in `vestibule_directory` (see `config.ini`). You can set the optional parameter `nb_pages` to 1 in the call of `fetch.fetch_current_annonces()` for a developpement setup.
 * Run `copy_files.py` to unzip archives, update the table `files` and copy the files :
-  * original archive and unzipped files are copied to `target_dir` when the unzip operation is successful
-  * a copy of the original file is stored in `archive_dir` when the unzip operation is successful 
+  * original archive and unzipped files are copied to `public_directory` when the unzip operation is successful
+  * a copy of the original file is stored in `archive_directory` when the unzip operation is successful 
   * a copy of the original file is stored in `badfiles_dir` when the unzip operation is unsuccessful
-  * the original archive in `dir` is removed
+  * the original archive in `vestibule_directory` is removed

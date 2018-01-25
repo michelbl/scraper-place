@@ -1,8 +1,7 @@
+config.ini
+
+data
+
 .ipynb_checkpoints
 __pycache__
-config.ini
-files
-target
-archive
-tmp
-badfiles
+scraper_place.egg-info
