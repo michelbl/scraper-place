@@ -10,9 +10,10 @@ setup(
     packages=['scraper_place'],
     install_requires=[
         'beautifulsoup4>=4.6.0',
+        'boto3>=1.5.21',
         'jupyter>=1.0.0',
         'psycopg2>=2.7.3.2',
         'requests>=2.18.4',
     ],
-    zip_safe=False
+    zip_safe=False,
 )

@@ -5,3 +5,4 @@ data
 .ipynb_checkpoints
 __pycache__
 scraper_place.egg-info
+scripts/glacier.ipynb
