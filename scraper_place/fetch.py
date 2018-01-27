@@ -1,3 +1,9 @@
+"""fetch: Fetch DCE from https://www.marches-publics.gouv.fr/
+
+Use fetch_current_annonces() to fetch the list of currently available DCE.
+Use fetch_data() to fetch the metadata and the files custituting a DCE.
+"""
+
 import re
 from collections import Counter
 
@@ -14,8 +20,11 @@ boamp_regex = r'^http://www\.boamp\.fr/index\.php/avis/detail/([\d-]+)$'
 
 
 def fetch_current_annonces(nb_pages=0):
-    """
-    nb_pages: number of pages to fetch, 0 to set no limit
+    """fetch_current_annonces(): Fetch the list of currently available DCE.
+    
+    nb_pages: number of pages to fetch, 0 to set no limit (for example, you can set to 1 for a developpement setup)
+    
+    Returns a list of URL.
     """
     links_by_page = []
     page_state = None
