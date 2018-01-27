@@ -7,11 +7,39 @@ import datetime
 import re
 import os
 
-from scraper_place.config import CONFIG_FILE_STORAGE, STATE_FETCH_OK
+import psycopg2
+
+from scraper_place.config import CONFIG_DATABASE, CONFIG_FILE_STORAGE, CONFIG_ENV, STATE_FETCH_OK
 from scraper_place import fetch
 
 
 VESTIBULE = CONFIG_FILE_STORAGE['vestibule_directory']
+
+
+def fill_vestibule():
+
+    # Open connection
+    connection = psycopg2.connect(
+        dbname=CONFIG_DATABASE['name'],
+        user=CONFIG_DATABASE['username'],
+        password=CONFIG_DATABASE['password'],
+    )
+    cursor = connection.cursor()
+
+    if CONFIG_ENV['production']:
+        nb_pages = 0
+    else:
+        nb_pages = 1
+
+    links = fetch.fetch_current_annonces(nb_pages=1)
+
+    nb_processed = 0
+    for link in links:
+        nb_processed += process_link(link, connection, cursor)
+    print("Info: Processed {} DCE".format(nb_processed))    
+
+    cursor.close()
+    connection.close()
 
 
 def process_link(link, connection, cursor):
