@@ -23,4 +23,6 @@ assert CONFIG_DATABASE['host'] == 'localhost'
 assert CONFIG_DATABASE['port'] == '1234'
 
 # Possible values for the processing state
-STATE_FETCH_OK = 'fetch_ok';
+STATE_FETCH_OK = 'fetch_ok'
+STATE_GLACIER_OK = 'glacier_ok'
+STATE_CONTENT_INDEXATION_OK = 'content_indexation_ok'
