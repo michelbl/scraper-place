@@ -22,6 +22,7 @@ CONFIG_ENV = dict(CONFIG.items('env'))
 assert CONFIG_DATABASE['host'] == 'localhost'
 assert CONFIG_DATABASE['port'] == '1234'
 
+
 # Possible values for the processing state
 STATE_FETCH_OK = 'fetch_ok'
 STATE_GLACIER_OK = 'glacier_ok'

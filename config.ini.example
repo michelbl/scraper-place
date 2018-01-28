@@ -1,6 +1,7 @@
 [env]
 
-production=1
+env='production'
+#env='dev'
 
 [database]
 
@@ -12,11 +13,7 @@ password=***
 
 [file_storage]
 
-vestibule_directory=/home/michel/scraper-place/data/vestibule
-tmp_directory=/home/michel/scraper-place/data/tmp
 public_directory=/home/michel/scraper-place/data/public
-archive_directory=/home/michel/scraper-place/data/archive
-badfiles_dir=/home/michel/scraper-place/data/badfiles
 
 [aws_glacier]
 
