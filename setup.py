@@ -14,6 +14,7 @@ setup(
         'jupyter>=1.0.0',
         'psycopg2>=2.7.3.2',
         'requests>=2.18.4',
+        'Unidecode>=1.0.22',
     ],
     zip_safe=False,
 )

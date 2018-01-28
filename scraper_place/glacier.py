@@ -3,8 +3,9 @@
 
 import psycopg2
 import boto3
+from unidecode import unidecode
 
-from scraper_place.config import CONFIG_DATABASE, CONFIG_AWS_GLACIER, STATE_FETCH_OK, STATE_GLACIER_OK, build_internal_filepath
+from scraper_place.config import CONFIG_DATABASE, CONFIG_AWS_GLACIER, STATE_FETCH_OK, STATE_GLACIER_OK, CONFIG_ENV, build_internal_filepath
 
 
 def save():
@@ -56,8 +57,13 @@ def save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_com
             continue
 
         archive_description = '{}-{} {} ({}) {}'.format(annonce_id, org_acronym, file_type, filename, intitule)
+        archive_description = unidecode(archive_description)
+        archive_description = archive_description[:1023]
         
         internal_filepath = build_internal_filepath(annonce_id, org_acronym, filename, file_type)
+        if CONFIG_ENV['env'] != 'production':
+            print('Saving {} on AWS Glavier...'.format(internal_filepath))
+            print(archive_description)
         with open(internal_filepath, 'rb') as file_object:
             response = glacier_client.upload_archive(
                 vaultName=CONFIG_AWS_GLACIER['vault_name'],
@@ -81,9 +87,11 @@ def save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_com
         """
         UPDATE dce
         SET state = %s
-        FROM dce
         WHERE annonce_id = %s AND org_acronym = %s
         ;""",
         (STATE_GLACIER_OK,  annonce_id, org_acronym)
     )
     connection.commit()
+
+    if CONFIG_ENV['env'] != 'production':
+        print('Saved {}-{} on AWS Glavier'.format(annonce_id, org_acronym))
