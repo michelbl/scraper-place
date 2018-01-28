@@ -4,7 +4,7 @@
 
 PLACE permet d'accéder aux [Dossiers de Consultation des Entreprises (DCE)](https://fr.wikipedia.org/wiki/Dossier_de_consultation_des_entreprises) pour les consultations en cours. Malheureusement, PLACE ne permet pas un accès pratique aux ressources publiées pour tous les usages. D'une part, les dossiers des publications passées sont retirées. D'autre part, le fonctionnement du site rend malaisée le requetage automatisé des DCE.
 
-`scaper-place` va récupérer tous les DCE (ainsi que les métadonnées associées) pour les répliquer localement.
+`scaper-place` va récupérer tous les DCE (ainsi que les métadonnées associées) pour les répliquer localement et les indexer.
 
 Le droit d'accès applicable aux DCE est résumé dans une [fiche de la CADA](http://www.cada.fr/marches-publics,6085.html).
 
@@ -18,19 +18,33 @@ Curiously, a small fraction of the DCE appear in several pages, and this is not 
 
 ## Install `scaper-place`
 
-* Install `postgresql`, a new python virtual env with python3 (I suggest using `pew`)
-* `pip install -r requirements.txt`
+### Prerequisites
+
+* Install `postgresql`>=9.0 (may work on prior versions). Make sure it uses UTF-8 encoding.
+* If you plan to replicate the files on AWS Glacier, create a vault and create a IAM user with upload permission.
+* If you plan to index the data with ElasticSearch, install it. Make sure a tika server 1.17 (older versions may work) is reachable with the options `-enableUnsecureFeatures` and `-enableFileUrl`.
+* Create a python virtual env with python>=3.5 (may work on previous versions). I suggest using `pew`.
+
+### Installation
+
+* Clone this repository.
+* In the repository directory: `pip install --editable .`
 * Copy `config.ini.example` to `config.ini` and set your configuration.
-* Create the directories you configured in `config.ini`, except the temporary directory.
+* Create the directory you configured in `config.ini` and make sure it is writable by the process that will run `scraper-place`.
 * Create a new database user with all privileges on a new table, with access by password (`md5` in `pg_hda.conf`).
-* Run `create_tables.ipynb` to prepare the database.
+* Run `create_tables.ipynb` to prepare the database and ElasticSearch.
 
 
 ## Usage
 
-* Run `update_tables.py` to scrap PLACE and update the local table `dce`. The files are stored in `vestibule_directory` (see `config.ini`). You can set the optional parameter `nb_pages` to 1 in the call of `fetch.fetch_current_annonces()` for a developpement setup.
-* Run `copy_files.py` to unzip archives, update the table `files` and copy the files :
-  * original archive and unzipped files are copied to `public_directory` when the unzip operation is successful
-  * a copy of the original file is stored in `archive_directory` when the unzip operation is successful 
-  * a copy of the original file is stored in `badfiles_dir` when the unzip operation is unsuccessful
-  * the original archive in `vestibule_directory` is removed
+```
+from scraper_place import fetch, glacier, content_indexing
+
+fetch.fetch_new_dce()
+glacier.save()
+content_indexing.index()
+```
+
+* `fetch.fetch_new_dce()` parses https://www.marches-publics.gouv.fr/ and fetches new DCEs.
+* `glacier.save()` sends a copy to AWS Glacier
+* `content_indexing.index()` extracts content with Apache Tika and feeds it to ElasticSearch
