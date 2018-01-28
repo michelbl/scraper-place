@@ -24,3 +24,7 @@ vault_arn=arn:aws:glacier:xxx:xxx:vaults/xxx
 iam_id=arn:aws:iam::xxx:user/xxx
 aws_access_key_id=xxx
 aws_secret_access_key=xxx
+
+[tika]
+
+tika_server_url=http://localhost:9998/
