@@ -39,13 +39,13 @@ def save():
     dce_data_list = cursor.fetchall()
     for dce_data in dce_data_list:
         annonce_id, org_acronym, intitule, filename_reglement, filename_complement, filename_avis, filename_dce = dce_data
-        save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_complement, filename_avis, filename_dce, cursor, glacier_client)
+        save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_complement, filename_avis, filename_dce, connection, cursor, glacier_client)
 
     cursor.close()
     connection.close()
 
 
-def save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_complement, filename_avis, filename_dce, cursor, glacier_client):
+def save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_complement, filename_avis, filename_dce, connection, cursor, glacier_client):
     """save_dce(): Save one DCE to AWS Glacier
     """
     file_types = ['reglement', 'complement', 'avis', 'dce']
@@ -69,13 +69,13 @@ def save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_com
         psql_request_template = """
             UPDATE dce
             SET glacier_id_{} = %s
-            FROM dce
             WHERE annonce_id = %s AND org_acronym = %s
             ;""".format(file_type)
         cursor.execute(
             psql_request_template,
-            (annonce_id, org_acronym, archive_id)
+            (archive_id, annonce_id, org_acronym)
         )
+        connection.commit()
 
     cursor.execute(
         """
@@ -84,5 +84,6 @@ def save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_com
         FROM dce
         WHERE annonce_id = %s AND org_acronym = %s
         ;""",
-        (STATE_GLACIER_OK,  org_acronym, archive_id)
+        (STATE_GLACIER_OK,  annonce_id, org_acronym)
     )
+    connection.commit()
