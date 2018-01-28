@@ -14,10 +14,8 @@ import requests
 from bs4 import BeautifulSoup
 import psycopg2
 
-from scraper_place.config import CONFIG_DATABASE, CONFIG_FILE_STORAGE, CONFIG_ENV, STATE_FETCH_OK
+from scraper_place.config import CONFIG_DATABASE, CONFIG_ENV, STATE_FETCH_OK, build_internal_filepath
 
-
-TARGET_DIRECTORY = CONFIG_FILE_STORAGE['public_directory']
 
 URL_SEARCH = 'https://www.marches-publics.gouv.fr/?page=entreprise.EntrepriseAdvancedSearch&AllCons'
 
@@ -72,43 +70,26 @@ def process_link(link, connection, cursor):
 
     try:
         (
-            annonce_id, org_acronym, links_boamp,
-            reference, intitule, objet, reglement_ref,
-            filename_reglement, reglement, filename_complement,
-            complement, filename_avis, avis, filename_dce, dce) = fetch_data(link)
+            annonce_id, org_acronym, links_boamp, reference, intitule, objet, reglement_ref,
+            filename_reglement, reglement,
+            filename_complement, complement,
+            filename_avis, avis,
+            filename_dce, dce
+        ) = fetch_data(link)
     except Exception as exception:
         print("Warning: exception occured ({}) : {}".format(exception, link))
         return 0
 
     now = datetime.datetime.now()
 
-    if reglement:
-        extention = os.path.splitext(filename_reglement)[1]
-        filename = '{}-{}-reglement{}'.format(annonce_id, org_acronym, extention)
-        filepath = os.path.join(TARGET_DIRECTORY, filename)
-        with open(filepath, 'wb') as file_object:
-            file_object.write(reglement)
-
-    if avis:
-        extention = os.path.splitext(filename_avis)[1]
-        filename = '{}-{}-avis{}'.format(annonce_id, org_acronym, extention)
-        filepath = os.path.join(TARGET_DIRECTORY, filename)
-        with open(filepath, 'wb') as file_object:
-            file_object.write(avis)
-
-    if complement:
-        extention = os.path.splitext(filename_complement)[1]
-        filename = '{}-{}-complement{}'.format(annonce_id, org_acronym, extention)
-        filepath = os.path.join(TARGET_DIRECTORY, filename)
-        with open(filepath, 'wb') as file_object:
-            file_object.write(complement)
-
-    if dce:
-        extention = os.path.splitext(filename_dce)[1]
-        filename = '{}-{}-dce{}'.format(annonce_id, org_acronym, extention)
-        filepath = os.path.join(TARGET_DIRECTORY, filename)
-        with open(filepath, 'wb') as file_object:
-            file_object.write(dce)
+    file_types = ['reglement', 'complement', 'avis', 'dce']
+    filenames = [filename_reglement, filename_complement, filename_avis, filename_dce]
+    file_contents = [reglement, complement, avis, dce]
+    for file_type, filename, file_content in zip(file_types, filenames, file_contents):
+        if file_content:
+            internal_filepath = build_internal_filepath(annonce_id, org_acronym, filename, file_type)
+            with open(internal_filepath, 'wb') as file_object:
+                file_object.write(reglement)
 
     cursor.execute(
         """

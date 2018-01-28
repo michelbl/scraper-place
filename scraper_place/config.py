@@ -1,4 +1,4 @@
-"""config: Read config
+"""config: Provide config, constants and helper functions
 """
 import configparser
 import os
@@ -27,3 +27,16 @@ assert CONFIG_DATABASE['port'] == '1234'
 STATE_FETCH_OK = 'fetch_ok'
 STATE_GLACIER_OK = 'glacier_ok'
 STATE_CONTENT_INDEXATION_OK = 'content_indexation_ok'
+
+
+def build_internal_filepath(annonce_id, org_acronym, original_filename, file_type):
+    """build_internal_filepath(): build the filename used for storage
+
+    file_type: One of 'reglement', 'complement', 'avis', 'dce'
+    """
+
+    extention = os.path.splitext(original_filename)[1]
+    internal_filename = '{}-{}-{}{}'.format(annonce_id, org_acronym, file_type, extention)
+    internal_filepath = os.path.join(CONFIG_FILE_STORAGE['public_directory'], internal_filename)
+
+    return internal_filepath
