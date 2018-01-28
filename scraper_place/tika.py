@@ -8,12 +8,114 @@ import json
 import os
 import urllib
 
+import psycopg2
 import requests
 
-from scraper_place.config import CONFIG_TIKA
+from scraper_place.config import CONFIG_TIKA, CONFIG_DATABASE, CONFIG_ELASTICSEARCH, CONFIG_ENV, STATE_GLACIER_OK, STATE_CONTENT_INDEXATION_OK, build_internal_filepath
 
 
-def process_file(file_path):
+def extract():
+    """extract(): Extract content from all DCE and save it in ElasticSearch.
+    """
+
+    # Open connection
+    connection = psycopg2.connect(
+        dbname=CONFIG_DATABASE['name'],
+        user=CONFIG_DATABASE['username'],
+        password=CONFIG_DATABASE['password'],
+    )
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT annonce_id, org_acronym,
+            filename_reglement, filename_complement, filename_avis, filename_dce
+        FROM dce
+        WHERE state = %s 
+        ;""",
+        (STATE_GLACIER_OK, )
+    )
+
+    dce_data_list = cursor.fetchall()
+    for dce_data in dce_data_list:
+        annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce = dce_data
+        extract_dce(annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce, connection, cursor)
+
+    cursor.close()
+    connection.close()
+
+
+def extract_dce(annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce, connection, cursor):
+    """extract_dce(): Extract the content of one DCE and give it to ElasticSearch
+    """
+
+    content_list = []
+
+    file_types = ['reglement', 'complement', 'avis', 'dce']
+    filenames = [filename_reglement, filename_complement, filename_avis, filename_dce]
+
+    for file_type, filename in zip(file_types, filenames):
+        if not filename:
+            continue
+
+        internal_filepath = build_internal_filepath(annonce_id, org_acronym, filename, file_type)
+        if CONFIG_ENV['env'] != 'production':
+            print('Extracting content of {}...'.format(internal_filepath))
+
+        content, embedded_resource_paths = extract_file(internal_filepath)
+
+        psql_request_template = """
+            UPDATE dce
+            SET embedded_filenames_{} = %s
+            WHERE annonce_id = %s AND org_acronym = %s
+            ;""".format(file_type)
+        cursor.execute(
+            psql_request_template,
+            (embedded_resource_paths, annonce_id, org_acronym)
+        )
+        connection.commit()
+
+        content_list.append(content)
+    
+    content = '\n'.join(content_list)
+
+    feed_elastisearch(annonce_id, org_acronym, content)
+
+    cursor.execute(
+        """
+        UPDATE dce
+        SET state = %s
+        WHERE annonce_id = %s AND org_acronym = %s
+        ;""",
+        (STATE_CONTENT_INDEXATION_OK,  annonce_id, org_acronym)
+    )
+    connection.commit()
+
+    if CONFIG_ENV['env'] != 'production':
+        print('Extracted content from {}-{}'.format(annonce_id, org_acronym))
+
+
+def feed_elastisearch(annonce_id, org_acronym, content):
+    url = urllib.parse.urljoin(
+        CONFIG_ELASTICSEARCH['elasticsearch_server_url'],
+        '/'.join([
+            CONFIG_ELASTICSEARCH['index_name'],
+            CONFIG_ELASTICSEARCH['document_type'],
+            '{}-{}'.format(annonce_id, org_acronym),
+        ])
+    )
+
+    headers = {
+        'Content-Type': 'application/json',
+    }
+    data = {
+        "content" : content,
+    }
+    response = requests.put(url, headers=headers, json=data)
+    assert response.status_code == 200, (response.stats_code, response.text)
+
+
+def extract_file(file_path):
     url = urllib.parse.urljoin(CONFIG_TIKA['tika_server_url'], '/rmeta/text')
     headers = {
         'fileUrl': 'file://{}'.format(file_path),
