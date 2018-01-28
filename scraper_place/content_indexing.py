@@ -1,7 +1,9 @@
-"""tika: Extract content using Apache Tika
+"""content_indexing: Extract content using Apache Tika and ElasticSearch
 
 Make sure that a tika server is running and accepting file urls:
 `java -jar tika-server-1.17.jar -enableUnsecureFeatures -enableFileUrl`
+
+Make sure an ElasticSearch server is running.
 """
 
 import json
@@ -14,8 +16,8 @@ import requests
 from scraper_place.config import CONFIG_TIKA, CONFIG_DATABASE, CONFIG_ELASTICSEARCH, CONFIG_ENV, STATE_GLACIER_OK, STATE_CONTENT_INDEXATION_OK, build_internal_filepath
 
 
-def extract():
-    """extract(): Extract content from all DCE and save it in ElasticSearch.
+def index():
+    """index(): Extract content from all DCE and index it in ElasticSearch.
     """
 
     # Open connection
@@ -39,14 +41,14 @@ def extract():
     dce_data_list = cursor.fetchall()
     for dce_data in dce_data_list:
         annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce = dce_data
-        extract_dce(annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce, connection, cursor)
+        index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce, connection, cursor)
 
     cursor.close()
     connection.close()
 
 
-def extract_dce(annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce, connection, cursor):
-    """extract_dce(): Extract the content of one DCE and give it to ElasticSearch
+def index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce, connection, cursor):
+    """index_dce(): Extract the content of one DCE and give it to ElasticSearch
     """
 
     content_list = []
@@ -112,7 +114,7 @@ def feed_elastisearch(annonce_id, org_acronym, content):
         "content" : content,
     }
     response = requests.put(url, headers=headers, json=data)
-    assert response.status_code == 200, (response.stats_code, response.text)
+    assert response.status_code == 200, (response.status_code, response.text)
 
 
 def extract_file(file_path):
