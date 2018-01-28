@@ -28,3 +28,9 @@ aws_secret_access_key=xxx
 [tika]
 
 tika_server_url=http://localhost:9998/
+
+[elasticsearch]
+
+elasticsearch_server_url=http://localhost:9200/
+index_name=dce
+document_type=dce

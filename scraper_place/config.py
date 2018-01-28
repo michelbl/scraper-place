@@ -17,6 +17,7 @@ CONFIG_DATABASE = dict(CONFIG.items('database'))
 CONFIG_FILE_STORAGE = dict(CONFIG.items('file_storage'))
 CONFIG_AWS_GLACIER = dict(CONFIG.items('aws_glacier'))
 CONFIG_TIKA = dict(CONFIG.items('tika'))
+CONFIG_ELASTICSEARCH = dict(CONFIG.items('elasticsearch'))
 
 
 # Other values are not guaranteed to work (especially localhost='127.0.0.1')
