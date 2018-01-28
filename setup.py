@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='scraper-place',
-    version='1.0.0',
+    version='2.0.0',
     description='Scraper for https://www.marches-publics.gouv.fr/',
     url='https://github.com/michelbl/scraper-place',
     author='Michel Blancard',
