@@ -7,7 +7,6 @@ Use fetch_data() to fetch the metadata and the files custituting a DCE.
 
 import datetime
 import re
-import os
 from collections import Counter
 
 import requests

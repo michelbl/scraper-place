@@ -32,7 +32,7 @@ def save():
         SELECT annonce_id, org_acronym, intitule,
             filename_reglement, filename_complement, filename_avis, filename_dce
         FROM dce
-        WHERE state = %s 
+        WHERE state = %s
         ;""",
         (STATE_FETCH_OK, )
     )
@@ -59,7 +59,7 @@ def save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_com
         archive_description = '{}-{} {} ({}) {}'.format(annonce_id, org_acronym, file_type, filename, intitule)
         archive_description = unidecode(archive_description)
         archive_description = archive_description[:1023]
-        
+
         internal_filepath = build_internal_filepath(annonce_id, org_acronym, filename, file_type)
         if CONFIG_ENV['env'] != 'production':
             print('Saving {} on AWS Glavier...'.format(internal_filepath))
@@ -89,7 +89,7 @@ def save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_com
         SET state = %s
         WHERE annonce_id = %s AND org_acronym = %s
         ;""",
-        (STATE_GLACIER_OK,  annonce_id, org_acronym)
+        (STATE_GLACIER_OK, annonce_id, org_acronym)
     )
     connection.commit()
 

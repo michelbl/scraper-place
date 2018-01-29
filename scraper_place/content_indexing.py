@@ -33,7 +33,7 @@ def index():
         SELECT annonce_id, org_acronym,
             filename_reglement, filename_complement, filename_avis, filename_dce
         FROM dce
-        WHERE state = %s 
+        WHERE state = %s
         ;""",
         (STATE_GLACIER_OK, )
     )
@@ -78,7 +78,7 @@ def index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, 
         connection.commit()
 
         content_list.append(content)
-    
+
     content = '\n'.join(content_list)
 
     feed_elastisearch(annonce_id, org_acronym, content)
@@ -89,7 +89,7 @@ def index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, 
         SET state = %s
         WHERE annonce_id = %s AND org_acronym = %s
         ;""",
-        (STATE_CONTENT_INDEXATION_OK,  annonce_id, org_acronym)
+        (STATE_CONTENT_INDEXATION_OK, annonce_id, org_acronym)
     )
     connection.commit()
 
@@ -166,6 +166,6 @@ def is_unwanted_type(filename):
             '.odt', '.ods', '.odp'
             '.html',
             '.txt', '.rtf',
-            }:
+    }:
         return False
     return True
