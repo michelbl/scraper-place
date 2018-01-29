@@ -114,7 +114,7 @@ def feed_elastisearch(annonce_id, org_acronym, content):
         "content" : content,
     }
     response = requests.put(url, headers=headers, json=data)
-    assert response.status_code == 200, (response.status_code, response.text)
+    assert response.status_code == 201, (response.status_code, response.text)
 
 
 def extract_file(file_path):
@@ -153,7 +153,7 @@ def filter_content(tika_result):
 
         if 'X-TIKA:content' in file_data:  # can also be a image PDF
             file_content = file_data['X-TIKA:content']
-        content_list.append(file_content)
+            content_list.append(file_content)
 
     return content_list, embedded_resource_paths
 
