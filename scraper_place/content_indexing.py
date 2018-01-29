@@ -124,6 +124,7 @@ def extract_file(file_path):
         'Accept': 'application/json',
     }
     response = requests.put(url, headers=headers)
+    assert response.status_code == 200, (response.status_code, response.text)
 
     tika_result = json.loads(response.content)  # better than r.text that takes hours to compute
 
