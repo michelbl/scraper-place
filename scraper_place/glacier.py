@@ -59,6 +59,7 @@ def save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_com
         archive_description = '{}-{} {} ({}) {}'.format(annonce_id, org_acronym, file_type, filename, intitule)
         archive_description = unidecode(archive_description)
         archive_description = archive_description[:1023]
+        archive_description = archive_description.replace('\t', '    ')
 
         internal_filepath = build_internal_filepath(annonce_id, org_acronym, filename, file_type)
         if CONFIG_ENV['env'] != 'production':
