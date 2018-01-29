@@ -28,7 +28,7 @@ assert CONFIG_DATABASE['port'] == '1234'
 # Possible values for the processing state
 STATE_FETCH_OK = 'fetch_ok'
 STATE_GLACIER_OK = 'glacier_ok'
-STATE_CONTENT_INDEXATION_OK = 'content_indexation_ok'
+STATE_CONTENT_INDEXATION_OK = 'content_indexing_ok'
 
 
 def build_internal_filepath(annonce_id, org_acronym, original_filename, file_type):
