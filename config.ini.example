@@ -1,3 +1,8 @@
+[env]
+
+env=production
+#env=dev
+
 [database]
 
 host=localhost
@@ -8,8 +13,24 @@ password=***
 
 [file_storage]
 
-dir=/home/michel/scraper-place/files
-tmp_dir=/home/michel/scraper-place/tmp
-target_dir=/home/michel/scraper-place/target
-archive_dir=/home/michel/scraper-place/archive
-badfiles_dir=/home/michel/scraper-place/badfiles
+public_directory=/home/michel/scraper-place/data/public
+
+[aws_glacier]
+
+region_name=xxx
+vaule_name=xxx
+vault_arn=arn:aws:glacier:xxx:xxx:vaults/xxx
+
+iam_id=arn:aws:iam::xxx:user/xxx
+aws_access_key_id=xxx
+aws_secret_access_key=xxx
+
+[tika]
+
+tika_server_url=http://localhost:9998/
+
+[elasticsearch]
+
+elasticsearch_server_url=http://localhost:9200/
+index_name=dce
+document_type=dce
