@@ -88,7 +88,7 @@ def process_link(link, connection, cursor):
         if file_content:
             internal_filepath = build_internal_filepath(annonce_id, org_acronym, filename, file_type)
             with open(internal_filepath, 'wb') as file_object:
-                file_object.write(reglement)
+                file_object.write(file_content)
 
     cursor.execute(
         """
