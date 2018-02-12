@@ -12,6 +12,7 @@ setup(
         'beautifulsoup4>=4.6.0',
         'boto3>=1.5.21',
         'jupyter>=1.0.0',
+        'paramiko>=2.4.0',
         'psycopg2>=2.7.3.2',
         'requests>=2.18.4',
         'Unidecode>=1.0.22',
