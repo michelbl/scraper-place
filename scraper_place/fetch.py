@@ -179,15 +179,15 @@ def fetch_data(link_annonce):
             'PRADO_PAGESTATE': page_state,
             'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$repeaterAvis$ctl1$linkDownloadAvis',
         }
-        response = requests.post(url_annonce, data=data, stream=True)
-        assert response.status_code == 200
+        response_avis = requests.post(url_annonce, data=data, stream=True)
+        assert response_avis.status_code == 200
 
-        content_type = response.headers['Content-Type']
+        content_type = response_avis.headers['Content-Type']
         assert content_type in {'application/octet-stream', 'application/zip'}, content_type
         regex_attachment = r'^attachment; filename="([^"]+)";$'
-        filename_avis = re.match(regex_attachment, response.headers['Content-Disposition']).groups()[0]
+        filename_avis = re.match(regex_attachment, response_avis.headers['Content-Disposition']).groups()[0]
 
-        write_response_to_file(annonce_id, org_acronym, filename_avis, 'avis', response)
+        write_response_to_file(annonce_id, org_acronym, filename_avis, 'avis', response_avis)
 
 
     # Fetch reglement
@@ -201,14 +201,14 @@ def fetch_data(link_annonce):
         link_reglement = links_reglement[0]
         reglement_ref = re.match(REGLEMENT_REGEX, link_reglement).groups()[0]
         url_reglement = 'https://www.marches-publics.gouv.fr/' + link_reglement
-        r_reglement = requests.get(url_reglement, stream=True)
-        assert response.status_code == 200
-        content_type = r_reglement.headers['Content-Type']
+        response_reglement = requests.get(url_reglement, stream=True)
+        assert response_reglement.status_code == 200
+        content_type = response_reglement.headers['Content-Type']
         assert content_type in {'application/octet-stream', 'application/zip'}, content_type
         regex_attachment = r'^attachment; filename="([^"]+)";$'
-        filename_reglement = re.match(regex_attachment, r_reglement.headers['Content-Disposition']).groups()[0]
+        filename_reglement = re.match(regex_attachment, response_reglement.headers['Content-Disposition']).groups()[0]
 
-        write_response_to_file(annonce_id, org_acronym, filename_reglement, 'reglement', r_reglement)
+        write_response_to_file(annonce_id, org_acronym, filename_reglement, 'reglement', response_reglement)
 
 
     # Fetch complement
@@ -221,15 +221,15 @@ def fetch_data(link_annonce):
             'PRADO_PAGESTATE': page_state,
             'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$linkDownloadComplement',
         }
-        response = requests.post(url_annonce, data=data, stream=True)
-        assert response.status_code == 200
+        response_complement = requests.post(url_annonce, data=data, stream=True)
+        assert response_complement.status_code == 200
 
-        content_type = response.headers['Content-Type']
+        content_type = response_complement.headers['Content-Type']
         assert content_type in {'application/octet-stream', 'application/zip'}, content_type
         regex_attachment = r'^attachment; filename="([^"]+)";$'
-        filename_complement = re.match(regex_attachment, response.headers['Content-Disposition']).groups()[0]
+        filename_complement = re.match(regex_attachment, response_complement.headers['Content-Disposition']).groups()[0]
 
-        write_response_to_file(annonce_id, org_acronym, filename_complement, 'complement', response)
+        write_response_to_file(annonce_id, org_acronym, filename_complement, 'complement', response_complement)
 
 
     # Get Dossier de Consultation aux Entreprises
@@ -239,32 +239,32 @@ def fetch_data(link_annonce):
         filename_dce = None
     else:
         url_dce = 'https://www.marches-publics.gouv.fr/index.php?page=entreprise.EntrepriseDemandeTelechargementDce&refConsultation={}&orgAcronyme={}'.format(annonce_id, org_acronym)
-        response = requests.get(url_dce)
-        assert response.status_code == 200
-        page_state = re.search(PAGE_STATE_REGEX, response.text).groups()[0]
+        response_dce = requests.get(url_dce)
+        assert response_dce.status_code == 200
+        page_state = re.search(PAGE_STATE_REGEX, response_dce.text).groups()[0]
 
         data = {
             'PRADO_PAGESTATE': page_state,
             'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$validateButton',
             'ctl0$CONTENU_PAGE$EntrepriseFormulaireDemande$RadioGroup': 'ctl0$CONTENU_PAGE$EntrepriseFormulaireDemande$choixAnonyme',
         }
-        response = requests.post(url_dce, data=data)
-        assert response.status_code == 200
-        page_state = re.search(PAGE_STATE_REGEX, response.text).groups()[0]
+        response_dce2 = requests.post(url_dce, data=data)
+        assert response_dce2.status_code == 200
+        page_state = re.search(PAGE_STATE_REGEX, response_dce2.text).groups()[0]
 
         data = {
             'PRADO_PAGESTATE': page_state,
             'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$EntrepriseDownloadDce$completeDownload',
         }
-        response = requests.post(url_dce, data=data, stream=True)
-        assert response.status_code == 200
+        response_dce3 = requests.post(url_dce, data=data, stream=True)
+        assert response_dce3.status_code == 200
 
-        content_type = response.headers['Content-Type']
+        content_type = response_dce3.headers['Content-Type']
         assert content_type == 'application/zip', content_type
         regex_attachment = r'^attachment; filename="([^"]+)";$'
-        filename_dce = re.match(regex_attachment, response.headers['Content-Disposition']).groups()[0]
+        filename_dce = re.match(regex_attachment, response_dce3.headers['Content-Disposition']).groups()[0]
 
-        write_response_to_file(annonce_id, org_acronym, filename_dce, 'dce', response)
+        write_response_to_file(annonce_id, org_acronym, filename_dce, 'dce', response_dce3)
     
 
     return annonce_id, org_acronym, links_boamp, reference, intitule, objet, reglement_ref, filename_reglement, filename_complement, filename_avis, filename_dce
