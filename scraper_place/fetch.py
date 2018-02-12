@@ -71,10 +71,7 @@ def process_link(link, connection, cursor):
     try:
         (
             annonce_id, org_acronym, links_boamp, reference, intitule, objet, reglement_ref,
-            filename_reglement, reglement,
-            filename_complement, complement,
-            filename_avis, avis,
-            filename_dce, dce
+            filename_reglement, filename_complement, filename_avis, filename_dce,
         ) = fetch_data(link)
     except Exception as exception:
         print("Warning: exception occured ({}: {}) on {}".format(type(exception).__name__, exception, link))
@@ -82,15 +79,6 @@ def process_link(link, connection, cursor):
         return 0
 
     now = datetime.datetime.now()
-
-    file_types = ['reglement', 'complement', 'avis', 'dce']
-    filenames = [filename_reglement, filename_complement, filename_avis, filename_dce]
-    file_contents = [reglement, complement, avis, dce]
-    for file_type, filename, file_content in zip(file_types, filenames, file_contents):
-        if file_content:
-            internal_filepath = build_internal_filepath(annonce_id, org_acronym, filename, file_type)
-            with open(internal_filepath, 'wb') as file_object:
-                file_object.write(file_content)
 
     cursor.execute(
         """
@@ -123,7 +111,7 @@ def process_link(link, connection, cursor):
 def fetch_current_annonces(nb_pages=0):
     """fetch_current_annonces(): Fetch the list of currently available DCE.
 
-    nb_pages: number of pages to fetch, 0 to set no limit (for example, you can set to 1 for a developpement setup)
+    nb_pages: number of pages to fetch, 0 to set no limit (for example, you can set to 1 for a development setup)
 
     Returns a list of URL.
     """
@@ -174,25 +162,32 @@ def fetch_data(link_annonce):
     objet = soup.find(id="ctl0_CONTENU_PAGE_idEntrepriseConsultationSummary_objet").string
 
 
+    def write_response_to_file(annonce_id, org_acronym, filename, file_type, response):
+        internal_filepath = build_internal_filepath(annonce_id, org_acronym, filename, file_type)
+        with open(internal_filepath, 'wb') as file_object:
+            for chunk in response.iter_content(8192):
+                file_object.write(chunk)
+
+
     # Get avis
 
     link_avis = soup.find(id="ctl0_CONTENU_PAGE_repeaterAvis_ctl1_linkDownloadAvis")
     if link_avis.parent.parent.attrs['style'] == 'display:none':
         filename_avis = None
-        avis = None
     else:
         data = {
             'PRADO_PAGESTATE': page_state,
             'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$repeaterAvis$ctl1$linkDownloadAvis',
         }
-        response = requests.post(url_annonce, data=data)
+        response = requests.post(url_annonce, data=data, stream=True)
         assert response.status_code == 200
 
         content_type = response.headers['Content-Type']
         assert content_type in {'application/octet-stream', 'application/zip'}, content_type
         regex_attachment = r'^attachment; filename="([^"]+)";$'
         filename_avis = re.match(regex_attachment, response.headers['Content-Disposition']).groups()[0]
-        avis = response.content
+
+        write_response_to_file(annonce_id, org_acronym, filename_avis, 'avis', response)
 
 
     # Fetch reglement
@@ -200,20 +195,20 @@ def fetch_data(link_annonce):
     links_reglement = extract_links(response, REGLEMENT_REGEX)
     if not links_reglement:
         filename_reglement = None
-        reglement = None
         reglement_ref = None
     else:
         assert len(links_reglement) == 1
         link_reglement = links_reglement[0]
         reglement_ref = re.match(REGLEMENT_REGEX, link_reglement).groups()[0]
         url_reglement = 'https://www.marches-publics.gouv.fr/' + link_reglement
-        r_reglement = requests.get(url_reglement)
+        r_reglement = requests.get(url_reglement, stream=True)
         assert response.status_code == 200
         content_type = r_reglement.headers['Content-Type']
         assert content_type in {'application/octet-stream', 'application/zip'}, content_type
         regex_attachment = r'^attachment; filename="([^"]+)";$'
         filename_reglement = re.match(regex_attachment, r_reglement.headers['Content-Disposition']).groups()[0]
-        reglement = r_reglement.content
+
+        write_response_to_file(annonce_id, org_acronym, filename_reglement, 'reglement', r_reglement)
 
 
     # Fetch complement
@@ -221,20 +216,20 @@ def fetch_data(link_annonce):
     link_complement = soup.find(id="ctl0_CONTENU_PAGE_linkDownloadComplement")
     if link_complement.parent.attrs['style'] == 'display:none':
         filename_complement = None
-        complement = None
     else:
         data = {
             'PRADO_PAGESTATE': page_state,
             'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$linkDownloadComplement',
         }
-        response = requests.post(url_annonce, data=data)
+        response = requests.post(url_annonce, data=data, stream=True)
         assert response.status_code == 200
 
         content_type = response.headers['Content-Type']
         assert content_type in {'application/octet-stream', 'application/zip'}, content_type
         regex_attachment = r'^attachment; filename="([^"]+)";$'
         filename_complement = re.match(regex_attachment, response.headers['Content-Disposition']).groups()[0]
-        complement = response.content
+
+        write_response_to_file(annonce_id, org_acronym, filename_complement, 'complement', response)
 
 
     # Get Dossier de Consultation aux Entreprises
@@ -242,7 +237,6 @@ def fetch_data(link_annonce):
     link_dce = soup.find(id="ctl0_CONTENU_PAGE_linkDownloadDce")
     if link_dce.parent.parent.attrs['style'] == 'display:none':
         filename_dce = None
-        dce = None
     else:
         url_dce = 'https://www.marches-publics.gouv.fr/index.php?page=entreprise.EntrepriseDemandeTelechargementDce&refConsultation={}&orgAcronyme={}'.format(annonce_id, org_acronym)
         response = requests.get(url_dce)
@@ -262,17 +256,18 @@ def fetch_data(link_annonce):
             'PRADO_PAGESTATE': page_state,
             'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$EntrepriseDownloadDce$completeDownload',
         }
-        response = requests.post(url_dce, data=data)
+        response = requests.post(url_dce, data=data, stream=True)
         assert response.status_code == 200
 
         content_type = response.headers['Content-Type']
         assert content_type == 'application/zip', content_type
         regex_attachment = r'^attachment; filename="([^"]+)";$'
         filename_dce = re.match(regex_attachment, response.headers['Content-Disposition']).groups()[0]
-        dce = response.content
 
+        write_response_to_file(annonce_id, org_acronym, filename_dce, 'dce', response)
+    
 
-    return annonce_id, org_acronym, links_boamp, reference, intitule, objet, reglement_ref, filename_reglement, reglement, filename_complement, complement, filename_avis, avis, filename_dce, dce
+    return annonce_id, org_acronym, links_boamp, reference, intitule, objet, reglement_ref, filename_reglement, filename_complement, filename_avis, filename_dce
 
 
 def init():
