@@ -8,6 +8,7 @@ Use fetch_data() to fetch the metadata and the files custituting a DCE.
 import datetime
 import re
 from collections import Counter
+import traceback
 
 import requests
 from bs4 import BeautifulSoup
@@ -76,7 +77,8 @@ def process_link(link, connection, cursor):
             filename_dce, dce
         ) = fetch_data(link)
     except Exception as exception:
-        print("Warning: exception occured ({}) : {}".format(exception, link))
+        print("Warning: exception occured ({}: {}) on {}".format(type(exception).__name__, exception, link))
+        traceback.print_exc()
         return 0
 
     now = datetime.datetime.now()
