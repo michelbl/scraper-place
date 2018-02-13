@@ -10,6 +10,7 @@ import json
 import os
 import urllib
 import time
+import traceback
 
 import psycopg2
 import requests
@@ -64,30 +65,36 @@ def index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, 
     file_types = ['reglement', 'complement', 'avis', 'dce']
     filenames = [filename_reglement, filename_complement, filename_avis, filename_dce]
 
-    for file_type, filename in zip(file_types, filenames):
-        if not filename:
-            continue
+    try:
+        for file_type, filename in zip(file_types, filenames):
+            if not filename:
+                continue
 
-        internal_filepath = build_internal_filepath(annonce_id, org_acronym, filename, file_type)
-        if CONFIG_ENV['env'] != 'production':
-            print('Extracting content of {}...'.format(internal_filepath))
+            internal_filepath = build_internal_filepath(annonce_id, org_acronym, filename, file_type)
+            if CONFIG_ENV['env'] != 'production':
+                print('Extracting content of {}...'.format(internal_filepath))
 
-        content, embedded_resource_paths = extract_file(internal_filepath, tika_server_url)
+            content, embedded_resource_paths = extract_file(internal_filepath, tika_server_url)
 
-        psql_request_template = """
-            UPDATE dce
-            SET embedded_filenames_{} = %s
-            WHERE annonce_id = %s AND org_acronym = %s
-            ;""".format(file_type)
-        cursor.execute(
-            psql_request_template,
-            (embedded_resource_paths, annonce_id, org_acronym)
-        )
-        connection.commit()
+            psql_request_template = """
+                UPDATE dce
+                SET embedded_filenames_{} = %s
+                WHERE annonce_id = %s AND org_acronym = %s
+                ;""".format(file_type)
+            cursor.execute(
+                psql_request_template,
+                (embedded_resource_paths, annonce_id, org_acronym)
+            )
+            connection.commit()
 
-        content_list.append(content)
+            content_list.append(content)
 
-    content = '\n'.join(content_list)
+        content = '\n'.join(content_list)
+
+    except Exception as exception:
+        print("Warning: exception occured ({}: {}) on {}-{}".format(type(exception).__name__, exception, annonce_id, org_acronym))
+        traceback.print_exc()
+        return
 
     feed_elastisearch(annonce_id, org_acronym, content)
 
