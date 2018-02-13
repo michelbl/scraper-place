@@ -9,6 +9,7 @@ Make sure an ElasticSearch server is running.
 import json
 import os
 import urllib
+import time
 
 import psycopg2
 import requests
@@ -47,7 +48,7 @@ def index():
     for dce_data in dce_data_list:
         annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce = dce_data
         index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce, connection, cursor, tika_server_url)
-    
+
     terminate_ec2(ec2_client, instance_id, ssh_client)
 
     cursor.close()
@@ -243,7 +244,9 @@ def init_ec2():
     assert ssh_channel.recv_exit_status() == 0
 
     ssh_channel = ssh_client.get_transport().open_session()
-    ssh_channel.exec_command('java -jar tika-server-1.17.jar --host=*')
+    ssh_channel.exec_command('java -jar tika-server-1.17.jar --host=* >tika-server.log 2>&1')
+
+    time.sleep(10)  # give some time to Tika to start
 
     if CONFIG_ENV['env'] != 'production':
         print('Launched Tika server')
