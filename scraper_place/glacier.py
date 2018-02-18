@@ -63,7 +63,7 @@ def save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_com
 
         internal_filepath = build_internal_filepath(annonce_id, org_acronym, filename, file_type)
         if CONFIG_ENV['env'] != 'production':
-            print('Saving {} on AWS Glavier...'.format(internal_filepath))
+            print('Debug: Saving {} on AWS Glavier...'.format(internal_filepath))
             print(archive_description)
         with open(internal_filepath, 'rb') as file_object:
             response = glacier_client.upload_archive(
@@ -95,4 +95,4 @@ def save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_com
     connection.commit()
 
     if CONFIG_ENV['env'] != 'production':
-        print('Saved {}-{} on AWS Glavier'.format(annonce_id, org_acronym))
+        print('Debug: Saved {}-{} on AWS Glavier'.format(annonce_id, org_acronym))

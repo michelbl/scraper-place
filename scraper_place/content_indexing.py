@@ -52,7 +52,7 @@ def index():
             index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce, connection, cursor, tika_server_url)
 
     except Exception as exception:
-        print("Warning: exception occured, terminating ({}: {})".format(type(exception).__name__, exception))
+        print("Error: exception occured, terminating ({}: {})".format(type(exception).__name__, exception))
         traceback.print_exc()
 
     terminate_ec2(ec2_client, instance_id, ssh_client)
@@ -77,7 +77,7 @@ def index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, 
 
             internal_filepath = build_internal_filepath(annonce_id, org_acronym, filename, file_type)
             if CONFIG_ENV['env'] != 'production':
-                print('Extracting content of {}...'.format(internal_filepath))
+                print('Debug: Extracting content of {}...'.format(internal_filepath))
 
             content, embedded_resource_paths = extract_file(internal_filepath, tika_server_url)
 
@@ -124,7 +124,7 @@ def index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, 
     connection.commit()
 
     if CONFIG_ENV['env'] != 'production':
-        print('Extracted content from {}-{}'.format(annonce_id, org_acronym))
+        print('Debug: Extracted content from {}-{}'.format(annonce_id, org_acronym))
 
 
 def feed_elastisearch(annonce_id, org_acronym, content):
@@ -143,11 +143,6 @@ def feed_elastisearch(annonce_id, org_acronym, content):
     data = {
         "content" : content,
     }
-    print(url)
-    print(headers)
-    print(len(content))
-    with open('content.tmp', 'w') as f:
-        f.write(content)
     response = requests.put(url, headers=headers, json=data)
     assert response.status_code in {200, 201}, (response.status_code, response.text)
 
@@ -219,8 +214,7 @@ def init_ec2():
         region_name=CONFIG_AWS_EC2['region_name'],
     )
 
-    if CONFIG_ENV['env'] != 'production':
-        print('Launching EC2 instance...')
+    print('Info: Launching EC2 instance...')
 
     response = ec2_client.run_instances(
         BlockDeviceMappings=[
@@ -254,8 +248,7 @@ def init_ec2():
     )
     ec2_ipv4 = response['Reservations'][0]['Instances'][0]['PublicIpAddress']
 
-    if CONFIG_ENV['env'] != 'production':
-        print('Successfully launched instance {} with IPv4 {}'.format(instance_id, ec2_ipv4))
+    print('Info: Successfully launched instance {} with IPv4 {}'.format(instance_id, ec2_ipv4))
 
     ssh_client = paramiko.SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -279,8 +272,7 @@ def init_ec2():
 
     time.sleep(10)  # give some time to Tika to start
 
-    if CONFIG_ENV['env'] != 'production':
-        print('Launched Tika server')
+    print('Info: Launched Tika server')
 
     return ec2_client, instance_id, ec2_ipv4, ssh_client
 
@@ -296,5 +288,4 @@ def terminate_ec2(ec2_client, instance_id, ssh_client):
         InstanceIds=[instance_id],
     )
 
-    if CONFIG_ENV['env'] != 'production':
-        print('Terminated EC2 instance')
+    print('Info: Terminated EC2 instance')
