@@ -46,3 +46,5 @@ security_group=xxx
 
 key_name=xxx
 private_key=/home/michel/scraper-place/scraper-place.pem
+
+logs_directory=/home/michel/scraper-place/data/aws_logs

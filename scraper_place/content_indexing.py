@@ -1,7 +1,6 @@
 """content_indexing: Extract content using Apache Tika and ElasticSearch
 
-Make sure that a tika server is running and accepting file urls:
-`java -jar tika-server-1.17.jar -enableUnsecureFeatures -enableFileUrl`
+Automatically spawns an EC2 instance and start a Tika server.
 
 Make sure an ElasticSearch server is running.
 """
@@ -46,9 +45,15 @@ def index():
     ec2_client, instance_id, ec2_ipv4, ssh_client = init_ec2()
     tika_server_url = 'http://{}:9998/'.format(ec2_ipv4)
 
-    for dce_data in dce_data_list:
-        annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce = dce_data
-        index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce, connection, cursor, tika_server_url)
+    try:
+
+        for dce_data in dce_data_list:
+            annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce = dce_data
+            index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce, connection, cursor, tika_server_url)
+
+    except Exception as exception:
+        print("Warning: exception occured, terminating ({}: {})".format(type(exception).__name__, exception))
+        traceback.print_exc()
 
     terminate_ec2(ec2_client, instance_id, ssh_client)
 
@@ -92,7 +97,7 @@ def index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, 
         content = '\n'.join(content_list)
 
     except Exception as exception:
-        print("Warning: exception occured ({}: {}) on {}-{}".format(type(exception).__name__, exception, annonce_id, org_acronym))
+        print("Warning: exception occured, aborting DCE ({}: {}) on {}-{}".format(type(exception).__name__, exception, annonce_id, org_acronym))
         traceback.print_exc()
         return
 
@@ -128,8 +133,13 @@ def feed_elastisearch(annonce_id, org_acronym, content):
     data = {
         "content" : content,
     }
+    print(url)
+    print(headers)
+    print(len(content))
+    with open('content.tmp', 'w') as f:
+        f.write(content)
     response = requests.put(url, headers=headers, json=data)
-    assert response.status_code == 201, (response.status_code, response.text)
+    assert response.status_code in {200, 201}, (response.status_code, response.text)
 
 
 def extract_file(file_path, tika_server_url):
@@ -146,6 +156,10 @@ def extract_file(file_path, tika_server_url):
     content_list, embedded_resource_paths = filter_content(tika_result)
 
     content = '\n'.join(content_list)
+    
+    # See ipython notebook stats_elasticsearch
+    if len(content) > 10000000:
+        content = content[:5000000] + content[-5000000:]
 
     embedded_resource_paths = sorted(embedded_resource_paths)
 
@@ -251,7 +265,7 @@ def init_ec2():
     assert ssh_channel.recv_exit_status() == 0
 
     ssh_channel = ssh_client.get_transport().open_session()
-    ssh_channel.exec_command('java -jar tika-server-1.17.jar --host=* >tika-server.log 2>&1')
+    ssh_channel.exec_command('java -Xmx7000m -jar tika-server-1.17.jar --host=* >tika-server.log 2>&1')
 
     time.sleep(10)  # give some time to Tika to start
 
@@ -262,6 +276,10 @@ def init_ec2():
 
 
 def terminate_ec2(ec2_client, instance_id, ssh_client):
+    sftp_client = ssh_client.open_sftp()
+    sftp_client.get('tika-server.log', os.path.join(CONFIG_AWS_EC2['logs_directory'], 'tika-server.log'))
+    sftp_client.close()
+
     ssh_client.close()
 
     ec2_client.terminate_instances(
