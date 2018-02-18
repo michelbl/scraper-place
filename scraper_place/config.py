@@ -30,6 +30,7 @@ assert CONFIG_DATABASE['port'] == '1234'
 STATE_FETCH_OK = 'fetch_ok'
 STATE_GLACIER_OK = 'glacier_ok'
 STATE_CONTENT_INDEXATION_OK = 'content_indexing_ok'
+STATE_CONTENT_INDEXATION_KO = 'content_indexing_ko'
 
 
 def build_internal_filepath(annonce_id, org_acronym, original_filename, file_type):

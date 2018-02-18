@@ -16,7 +16,7 @@ import requests
 import boto3
 import paramiko
 
-from scraper_place.config import CONFIG_DATABASE, CONFIG_ELASTICSEARCH, CONFIG_AWS_EC2, CONFIG_ENV, STATE_GLACIER_OK, STATE_CONTENT_INDEXATION_OK, build_internal_filepath
+from scraper_place.config import CONFIG_DATABASE, CONFIG_ELASTICSEARCH, CONFIG_AWS_EC2, CONFIG_ENV, STATE_GLACIER_OK, STATE_CONTENT_INDEXATION_OK, STATE_CONTENT_INDEXATION_KO, build_internal_filepath
 
 
 def index():
@@ -99,6 +99,16 @@ def index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, 
     except Exception as exception:
         print("Warning: exception occured, aborting DCE ({}: {}) on {}-{}".format(type(exception).__name__, exception, annonce_id, org_acronym))
         traceback.print_exc()
+
+        cursor.execute(
+            """
+            UPDATE dce
+            SET state = %s
+            WHERE annonce_id = %s AND org_acronym = %s
+            ;""",
+            (STATE_CONTENT_INDEXATION_KO, annonce_id, org_acronym)
+        )
+        connection.commit()
         return
 
     feed_elastisearch(annonce_id, org_acronym, content)
