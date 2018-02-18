@@ -18,6 +18,7 @@ CONFIG_FILE_STORAGE = dict(CONFIG.items('file_storage'))
 CONFIG_AWS_GLACIER = dict(CONFIG.items('aws_glacier'))
 CONFIG_TIKA = dict(CONFIG.items('tika'))
 CONFIG_ELASTICSEARCH = dict(CONFIG.items('elasticsearch'))
+CONFIG_AWS_EC2 = dict(CONFIG.items('aws_ec2'))
 
 
 # Other values are not guaranteed to work (especially localhost='127.0.0.1')
@@ -28,7 +29,8 @@ assert CONFIG_DATABASE['port'] == '1234'
 # Possible values for the processing state
 STATE_FETCH_OK = 'fetch_ok'
 STATE_GLACIER_OK = 'glacier_ok'
-STATE_CONTENT_INDEXATION_OK = 'content_indexation_ok'
+STATE_CONTENT_INDEXATION_OK = 'content_indexing_ok'
+STATE_CONTENT_INDEXATION_KO = 'content_indexing_ko'
 
 
 def build_internal_filepath(annonce_id, org_acronym, original_filename, file_type):

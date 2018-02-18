@@ -23,7 +23,8 @@ Curiously, a small fraction of the DCE appear in several pages, and this is not 
 * Install `postgresql`>=9.0 (may work on prior versions). Make sure it uses UTF-8 encoding.
 * If you plan to replicate the files on AWS Glacier, create a vault and create a IAM user with upload permission.
 * If you plan to index the data with ElasticSearch, install it. Make sure a tika server 1.17 (older versions may work) is reachable with the options `-enableUnsecureFeatures` and `-enableFileUrl`.
-* Create a python virtual env with python>=3.5 (may work on previous versions). I suggest using `pew`.
+* If you plan to run the Tika server on an AWS EC2 instance, configure it accordingly (give permissions RunInstances, TerminateInstances, DescribeInstances, DescribeInstanceStatus, add a key pair, allow SSH inbound traffic).
+* Create a python virtual env with python>=3.6 (I suggest using `pew`).
 
 ### Installation
 

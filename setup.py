@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='scraper-place',
-    version='2.0.0',
+    version='2.1.0',
     description='Scraper for https://www.marches-publics.gouv.fr/',
     url='https://github.com/michelbl/scraper-place',
     author='Michel Blancard',
@@ -11,8 +11,11 @@ setup(
     install_requires=[
         'beautifulsoup4>=4.6.0',
         'boto3>=1.5.21',
+        'elasticsearch>=6.1.1',
         'jupyter>=1.0.0',
-        'psycopg2>=2.7.3.2',
+        'matplotlib>=2.1.2',
+        'paramiko>=2.4.0',
+        'psycopg2-binary>=2.7.4',
         'requests>=2.18.4',
         'Unidecode>=1.0.22',
     ],
