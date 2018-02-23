@@ -34,6 +34,7 @@ Curiously, a small fraction of the DCE appear in several pages, and this is not 
 * Create the directory you configured in `config.ini` and make sure it is writable by the process that will run `scraper-place`.
 * Create a new database user with all privileges on a new table, with access by password (`md5` in `pg_hda.conf`).
 * Run `create_tables.ipynb` to prepare the database and ElasticSearch.
+* Setup automatic backups for the database, for example in `55 23   * * 5   michel  PGPASSWORD=`cat /home/michel/place/pgpassword` /usr/bin/pg_dump --username=place --dbname=place | gzip > /home/michel/place/scraper-place/data/backups/scraper-place-`date +%Y-%m-%d-%H`.sql.gz; aws s3 cp /home/michel/place/scraper-place/data/backups/scraper-place-`date +%Y-%m-%d-%H`.sql.gz s3://scraper-place/scraper-place-`date +%Y-%m-%d-%H`.sql.gz`
 
 
 ## Usage
