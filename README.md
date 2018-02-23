@@ -50,3 +50,11 @@ content_indexing.index()
 * `fetch.fetch_new_dce()` parses https://www.marches-publics.gouv.fr/ and fetches new DCEs.
 * `glacier.save()` sends a copy to AWS Glacier
 * `content_indexing.index()` extracts content with Apache Tika and feeds it to ElasticSearch
+
+## Misc
+
+To use debug logging on elasticsearch:
+
+```
+curl -XPUT 'localhost:9200/_cluster/settings' --data '{"transient":{"logger._root":"DEBUG"}}' -H'Content-Type: application/json'
+```
