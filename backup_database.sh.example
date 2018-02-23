@@ -15,4 +15,4 @@
 
 PGPASSWORD=`cat /home/michel/scraper-place/place/pgpassword` /usr/bin/pg_dump --username=place --dbname=place | gzip > /home/michel/place/scraper-place/data/backups/scraper-place-`date +%Y-%m-%d-%H`.sql.gz
 
-aws s3 cp /home/michel/place/scraper-place/data/backups/scraper-place-`date +%Y-%m-%d-%H`.sql.gz s3://scraper-place/scraper-place-`date +%Y-%m-%d-%H`.sql.gz
+/home/michel/.local/share/virtualenvs/place/bin/aws s3 cp /home/michel/place/scraper-place/data/backups/scraper-place-`date +%Y-%m-%d-%H`.sql.gz s3://scraper-place/scraper-place-`date +%Y-%m-%d-%H`.sql.gz
