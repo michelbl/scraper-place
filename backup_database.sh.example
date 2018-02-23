@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# Configure AWS CLI by running "aws configure"
+
+# Username: XXX
+# AWS Access Key ID [None]: XXX
+# AWS Secret Access Key [None]: XXX
+# Default region name [None]: XXX
+# Default output format [None]: json
+
+# Create a file /home/michel/place/pgpassword containing only the password to the database
+
+# Add this line to "/etc/crontab"
+#55 23 * * 5 michel /home/michel/place/backup_database.sh
+
+PGPASSWORD=`cat /home/michel/place/pgpassword` /usr/bin/pg_dump --username=place --dbname=place | gzip > /home/michel/place/scraper-place/data/backups/scraper-place-`date +%Y-%m-%d-%H`.sql.gz
+
+aws s3 cp /home/michel/place/scraper-place/data/backups/scraper-place-`date +%Y-%m-%d-%H`.sql.gz s3://scraper-place/scraper-place-`date +%Y-%m-%d-%H`.sql.gz`

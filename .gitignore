@@ -6,3 +6,5 @@ data
 __pycache__
 scraper_place.egg-info
 scraper-place.pem
+pgpassword
+backup_database.sh
