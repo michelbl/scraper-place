@@ -9,6 +9,7 @@ setup(
     license='MIT',
     packages=['scraper_place'],
     install_requires=[
+        'awscli>=1.14',
         'beautifulsoup4>=4.6.0',
         'boto3>=1.5.21',
         'elasticsearch>=6.1.1',
