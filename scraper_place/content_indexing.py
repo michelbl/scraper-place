@@ -111,7 +111,7 @@ def index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, 
         connection.commit()
         return
 
-    feed_elastisearch(annonce_id, org_acronym, content)
+    feed_elastisearch(annonce_id, org_acronym, content, cursor)
 
     cursor.execute(
         """
@@ -127,7 +127,7 @@ def index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, 
         print('Debug: Extracted content from {}-{}'.format(annonce_id, org_acronym))
 
 
-def feed_elastisearch(annonce_id, org_acronym, content):
+def feed_elastisearch(annonce_id, org_acronym, content, cursor):
     url = urllib.parse.urljoin(
         CONFIG_ELASTICSEARCH['elasticsearch_server_url'],
         '/'.join([
@@ -140,11 +140,72 @@ def feed_elastisearch(annonce_id, org_acronym, content):
     headers = {
         'Content-Type': 'application/json',
     }
-    data = {
-        "content" : content,
-    }
+
+    data = get_data_for_elasticsearch(annonce_id, org_acronym, cursor)
+    data['content'] = content
+
     response = requests.put(url, headers=headers, json=data)
     assert response.status_code in {200, 201}, (response.status_code, response.text)
+
+
+def get_data_for_elasticsearch(annonce_id, org_acronym, cursor):
+    # Could be more elegant
+    cursor.execute(
+        """
+        SELECT
+            annonce_id, org_acronym, links_boamp, reference, intitule, objet, reglement_ref,
+            filename_reglement, filename_complement, filename_avis, filename_dce,
+            fetch_datetime,
+            file_size_reglement, file_size_complement, file_size_avis, file_size_dce,
+            glacier_id_reglement, glacier_id_complement, glacier_id_avis, glacier_id_dce,
+            embedded_filenames_reglement, embedded_filenames_complement, embedded_filenames_avis, embedded_filenames_dce,
+            state
+        FROM dce
+        WHERE annonce_id = %s AND org_acronym = %s
+        ;""",
+        (annonce_id, org_acronym),
+    )
+
+    dce_data_list = cursor.fetchall()
+    assert len(dce_data_list) == 1
+
+    (
+        annonce_id, org_acronym, links_boamp, reference, intitule, objet, reglement_ref,
+        filename_reglement, filename_complement, filename_avis, filename_dce,
+        fetch_datetime,
+        file_size_reglement, file_size_complement, file_size_avis, file_size_dce,
+        glacier_id_reglement, glacier_id_complement, glacier_id_avis, glacier_id_dce,
+        embedded_filenames_reglement, embedded_filenames_complement, embedded_filenames_avis, embedded_filenames_dce,
+        state
+    ) = dce_data_list[0]
+
+    return {
+        'annonce_id': annonce_id,
+        'org_acronym': org_acronym,
+        'links_boamp': links_boamp,
+        'reference': reference,
+        'intitule': intitule,
+        'objet': objet,
+        'reglement_ref': reglement_ref,
+        'filename_reglement': filename_reglement,
+        'filename_complement': filename_complement,
+        'filename_avis': filename_avis,
+        'filename_dce': filename_dce,
+        'fetch_datetime': fetch_datetime,
+        'file_size_reglement': file_size_reglement,
+        'file_size_complement': file_size_complement,
+        'file_size_avis': file_size_avis,
+        'file_size_dce': file_size_dce,
+        'glacier_id_reglement': glacier_id_reglement,
+        'glacier_id_complement': glacier_id_complement,
+        'glacier_id_avis': glacier_id_avis,
+        'glacier_id_dce': glacier_id_dce,
+        'embedded_filenames_reglement': embedded_filenames_reglement,
+        'embedded_filenames_complement': embedded_filenames_complement,
+        'embedded_filenames_avis': embedded_filenames_avis,
+        'embedded_filenames_dce': embedded_filenames_dce,
+        'state': state,
+    }
 
 
 def extract_file(file_path, tika_server_url):
