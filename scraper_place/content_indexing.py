@@ -133,7 +133,7 @@ def feed_elastisearch(annonce_id, org_acronym, content, cursor):
     data['content'] = content
 
     es_client = Elasticsearch([CONFIG_ELASTICSEARCH['elasticsearch_server_url']])  # Is it a good thing to create one client per doc?
-    response = es_client.update(
+    response = es_client.create(
         index=CONFIG_ELASTICSEARCH['index_name'],
         doc_type=CONFIG_ELASTICSEARCH['document_type'],
         id='{}-{}'.format(annonce_id, org_acronym),
