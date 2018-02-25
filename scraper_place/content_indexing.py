@@ -15,6 +15,7 @@ import psycopg2
 import requests
 import boto3
 import paramiko
+from elasticsearch import Elasticsearch
 
 from scraper_place.config import CONFIG_DATABASE, CONFIG_ELASTICSEARCH, CONFIG_AWS_EC2, CONFIG_ENV, STATE_GLACIER_OK, STATE_CONTENT_INDEXATION_OK, STATE_CONTENT_INDEXATION_KO, build_internal_filepath
 
@@ -128,24 +129,16 @@ def index_dce(annonce_id, org_acronym, filename_reglement, filename_complement, 
 
 
 def feed_elastisearch(annonce_id, org_acronym, content, cursor):
-    url = urllib.parse.urljoin(
-        CONFIG_ELASTICSEARCH['elasticsearch_server_url'],
-        '/'.join([
-            CONFIG_ELASTICSEARCH['index_name'],
-            CONFIG_ELASTICSEARCH['document_type'],
-            '{}-{}'.format(annonce_id, org_acronym),
-        ])
-    )
-
-    headers = {
-        'Content-Type': 'application/json',
-    }
-
     data = get_data_for_elasticsearch(annonce_id, org_acronym, cursor)
     data['content'] = content
 
-    response = requests.put(url, headers=headers, json=data)
-    assert response.status_code in {200, 201}, (response.status_code, response.text)
+    es_client = Elasticsearch([CONFIG_ELASTICSEARCH['elasticsearch_server_url']])  # Is it a good thing to create one client per doc?
+    response = es_client.update(
+        index=CONFIG_ELASTICSEARCH['index_name'],
+        doc_type=CONFIG_ELASTICSEARCH['document_type'],
+        id='{}-{}'.format(annonce_id, org_acronym),
+        body=data
+    )
 
 
 def get_data_for_elasticsearch(annonce_id, org_acronym, cursor):
