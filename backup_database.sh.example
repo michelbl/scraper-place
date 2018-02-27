@@ -13,6 +13,6 @@
 # Add this line to "/etc/crontab"
 #55 23 * * 5 michel /home/michel/place/backup_database.sh
 
-PGPASSWORD=`cat /home/michel/scraper-place/place/pgpassword` /usr/bin/pg_dump --username=place --dbname=place | gzip > /home/michel/place/scraper-place/data/backups/scraper-place-`date +%Y-%m-%d`.sql.gz
+PGPASSWORD=`cat /home/michel/scraper-place/place/pgpassword` /usr/bin/pg_dump --username=place --dbname=place --table=dce | gzip > /home/michel/place/scraper-place/data/backups/scraper-place-`date +%Y-%m-%d`.sql.gz
 
 /home/michel/.local/share/virtualenvs/place/bin/aws s3 cp --quiet /home/michel/place/scraper-place/data/backups/scraper-place-`date +%Y-%m-%d`.sql.gz s3://scraper-place/scraper-place-`date +%Y-%m-%d`.sql.gz
