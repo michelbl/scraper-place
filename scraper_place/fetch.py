@@ -20,7 +20,7 @@ from scraper_place.config import CONFIG_DATABASE, CONFIG_ENV, STATE_FETCH_OK, bu
 URL_SEARCH = 'https://www.marches-publics.gouv.fr/?page=entreprise.EntrepriseAdvancedSearch&AllCons'
 
 PAGE_STATE_REGEX = '<input type="hidden" name="PRADO_PAGESTATE" id="PRADO_PAGESTATE" value="([a-zA-Z0-9/+=]+)"'
-LINK_REGEX = r'^https://www\.marches-publics\.gouv\.fr/\?page=entreprise\.EntrepriseDetailConsultation&refConsultation=([\d]+)&orgAcronyme=([\da-z]+)$'
+LINK_REGEX = r'^https://www\.marches-publics\.gouv\.fr/\?page=entreprise\.EntrepriseDetailsConsultation&refConsultation=([\d]+)&orgAcronyme=([\da-z]+)$'
 REGLEMENT_REGEX = r'^index\.php\?page=entreprise\.EntrepriseDownloadReglement&reference=([a-zA-Z\d]+)&orgAcronyme=([\da-z]+)$'
 BOAMP_REGEX = r'^http://www\.boamp\.fr/index\.php/avis/detail/([\d-]+)$'
 
@@ -157,9 +157,15 @@ def fetch_data(link_annonce):
     links_boamp = unique_boamp
 
     soup = BeautifulSoup(response.text, 'html.parser')
-    reference = soup.find(id="ctl0_CONTENU_PAGE_idEntrepriseConsultationSummary_reference").string
-    intitule = soup.find(id="ctl0_CONTENU_PAGE_idEntrepriseConsultationSummary_intitule").string
-    objet = soup.find(id="ctl0_CONTENU_PAGE_idEntrepriseConsultationSummary_objet").string
+    
+    labels = soup.find_all(class_="atx-static-label")
+    infos = soup.find_all(class_="atx-static-info")
+
+    index_ref = [label.text for label in labels].index('Référence | Intitulé :')
+    reference, intitule = infos[index_ref].text.strip().split(' | ')
+
+    index_objet = [label.text for label in labels].index('Objet :')
+    objet = infos[index_objet].text.strip()
 
 
     def write_response_to_file(annonce_id, org_acronym, filename, file_type, response):
