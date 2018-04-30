@@ -179,13 +179,18 @@ def fetch_data(link_annonce):
     links_avis = []
 
     for link in file_links:
-        link_id = link.attrs['id']
         link_href = link.attrs['href']
 
         if re.match(BOAMP_REGEX, link_href):
             continue
         if not link_href:
             continue
+
+        if 'id' not in link.attrs:
+            # "liens directs"
+            continue
+
+        link_id = link.attrs['id']
 
         if link_id == 'linkDownloadReglement':
             links_reglements.append(link_href)
@@ -200,7 +205,8 @@ def fetch_data(link_annonce):
     link_reglement = links_reglements[0] if links_reglements else None
     assert len(links_dces) <= 1
     link_dce = links_dces[0] if links_dces else None
-    assert len(links_avis) <= 1
+    # Avis rectificatifs...
+    # assert len(links_avis) <= 1
     link_avis = links_avis[0] if links_avis else None
 
 
@@ -218,9 +224,7 @@ def fetch_data(link_annonce):
     else:
         response_avis = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_avis), stream=True)
         assert response_avis.status_code == 200
-        content_type = response_avis.headers['Content-Type']
-        assert content_type in {'application/pdf', }, content_type
-        regex_attachment = r'^attachment; filename="([^"]+)";'
+        regex_attachment = r'^attachment; filename="([^"]+)"'
         filename_avis = re.match(regex_attachment, response_avis.headers['Content-Disposition']).groups()[0]
 
         write_response_to_file(annonce_id, org_acronym, filename_avis, 'avis', response_avis)
