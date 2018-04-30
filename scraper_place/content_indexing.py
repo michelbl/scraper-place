@@ -43,10 +43,9 @@ def index():
     )
     dce_data_list = cursor.fetchall()
 
-    ec2_client, instance_id, ec2_ipv4, ssh_client = init_ec2()
-    tika_server_url = 'http://{}:9998/'.format(ec2_ipv4)
-
     try:
+        ec2_client, instance_id, ec2_ipv4, ssh_client = init_ec2()
+        tika_server_url = 'http://{}:9998/'.format(ec2_ipv4)
 
         for dce_data in dce_data_list:
             annonce_id, org_acronym, filename_reglement, filename_complement, filename_avis, filename_dce = dce_data
@@ -314,7 +313,7 @@ def init_ec2():
     )
 
     ssh_channel = ssh_client.get_transport().open_session()
-    ssh_channel.exec_command('wget http://apache.crihan.fr/dist/tika/tika-server-1.17.jar')
+    ssh_channel.exec_command('wget http://apache.crihan.fr/dist/tika/tika-server-1.18.jar')
     assert ssh_channel.recv_exit_status() == 0
 
     ssh_channel = ssh_client.get_transport().open_session()
@@ -322,7 +321,7 @@ def init_ec2():
     assert ssh_channel.recv_exit_status() == 0
 
     ssh_channel = ssh_client.get_transport().open_session()
-    ssh_channel.exec_command('java -Xmx7000m -jar tika-server-1.17.jar --host=* >tika-server.log 2>&1')
+    ssh_channel.exec_command('java -Xmx7000m -jar tika-server-1.18.jar --host=* >tika-server.log 2>&1')
 
     time.sleep(10)  # give some time to Tika to start
 
