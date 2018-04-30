@@ -21,7 +21,7 @@ URL_SEARCH = 'https://www.marches-publics.gouv.fr/?page=entreprise.EntrepriseAdv
 
 PAGE_STATE_REGEX = '<input type="hidden" name="PRADO_PAGESTATE" id="PRADO_PAGESTATE" value="([a-zA-Z0-9/+=]+)"'
 LINK_REGEX = r'^https://www\.marches-publics\.gouv\.fr/\?page=entreprise\.EntrepriseDetailsConsultation&refConsultation=([\d]+)&orgAcronyme=([\da-z]+)$'
-REGLEMENT_REGEX = r'^index\.php\?page=entreprise\.EntrepriseDownloadReglement&reference=([a-zA-Z\d]+)&orgAcronyme=([\da-z]+)$'
+REGLEMENT_REGEX = r'^https://www\.marches-publics\.gouv\.fr/index.php\?page=entreprise\.EntrepriseDownloadReglement&reference=([a-zA-Z\d]+)&orgAcronyme=([\da-z]+)$'
 BOAMP_REGEX = r'^http://www\.boamp\.fr/index\.php/avis/detail/([\d-]+)$'
 
 
@@ -157,7 +157,7 @@ def fetch_data(link_annonce):
     links_boamp = unique_boamp
 
     soup = BeautifulSoup(response.text, 'html.parser')
-    
+
     labels = soup.find_all(class_="atx-static-label")
     infos = soup.find_all(class_="atx-static-info")
 
@@ -166,6 +166,38 @@ def fetch_data(link_annonce):
 
     index_objet = [label.text for label in labels].index('Objet :')
     objet = infos[index_objet].text.strip()
+
+
+    # Get links to files
+
+    publicite_tabs = soup.find_all(id='pub')
+    assert len(publicite_tabs) == 1
+    publicite_tab = publicite_tabs[0]
+    file_links = publicite_tab.find_all('a')
+
+    links_reglements = []
+    links_dces = []
+
+    for link in file_links:
+        link_id = link.attrs['id']
+        link_href = link.attrs['href']
+
+        if re.match(BOAMP_REGEX, link_href):
+            continue
+        if not link_href:
+            continue
+
+        if link_id == 'linkDownloadReglement':
+            links_reglements.append(link_href)
+        elif link_id == 'linkDownloadDce':
+            links_dces.append(link_href)
+        else:
+            raise Exception('Unknown link type {} : '.format(link_id, link_href))
+
+    assert len(links_reglements) <= 1
+    link_reglement = links_reglements[0] if links_reglements else None
+    assert len(links_dces) <= 1
+    link_dce = links_dces[0] if links_dces else None
 
 
     def write_response_to_file(annonce_id, org_acronym, filename, file_type, response):
@@ -177,37 +209,17 @@ def fetch_data(link_annonce):
 
     # Get avis
 
-    link_avis = soup.find(id="ctl0_CONTENU_PAGE_repeaterAvis_ctl1_linkDownloadAvis")
-    if link_avis.parent.parent.attrs['style'] == 'display:none':
-        filename_avis = None
-    else:
-        data = {
-            'PRADO_PAGESTATE': page_state,
-            'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$repeaterAvis$ctl1$linkDownloadAvis',
-        }
-        response_avis = requests.post(url_annonce, data=data, stream=True)
-        assert response_avis.status_code == 200
-
-        content_type = response_avis.headers['Content-Type']
-        assert content_type in {'application/octet-stream', 'application/zip'}, content_type
-        regex_attachment = r'^attachment; filename="([^"]+)";$'
-        filename_avis = re.match(regex_attachment, response_avis.headers['Content-Disposition']).groups()[0]
-
-        write_response_to_file(annonce_id, org_acronym, filename_avis, 'avis', response_avis)
+    filename_avis = None
 
 
     # Fetch reglement
 
-    links_reglement = extract_links(response, REGLEMENT_REGEX)
-    if not links_reglement:
+    if not link_reglement:
         filename_reglement = None
         reglement_ref = None
     else:
-        assert len(links_reglement) == 1
-        link_reglement = links_reglement[0]
         reglement_ref = re.match(REGLEMENT_REGEX, link_reglement).groups()[0]
-        url_reglement = 'https://www.marches-publics.gouv.fr/' + link_reglement
-        response_reglement = requests.get(url_reglement, stream=True)
+        response_reglement = requests.get(link_reglement, stream=True)
         assert response_reglement.status_code == 200
         content_type = response_reglement.headers['Content-Type']
         assert content_type in {'application/octet-stream', 'application/zip'}, content_type
@@ -219,29 +231,12 @@ def fetch_data(link_annonce):
 
     # Fetch complement
 
-    link_complement = soup.find(id="ctl0_CONTENU_PAGE_linkDownloadComplement")
-    if link_complement.parent.attrs['style'] == 'display:none':
-        filename_complement = None
-    else:
-        data = {
-            'PRADO_PAGESTATE': page_state,
-            'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$linkDownloadComplement',
-        }
-        response_complement = requests.post(url_annonce, data=data, stream=True)
-        assert response_complement.status_code == 200
-
-        content_type = response_complement.headers['Content-Type']
-        assert content_type in {'application/octet-stream', 'application/zip'}, content_type
-        regex_attachment = r'^attachment; filename="([^"]+)";$'
-        filename_complement = re.match(regex_attachment, response_complement.headers['Content-Disposition']).groups()[0]
-
-        write_response_to_file(annonce_id, org_acronym, filename_complement, 'complement', response_complement)
+    filename_complement = None
 
 
     # Get Dossier de Consultation aux Entreprises
 
-    link_dce = soup.find(id="ctl0_CONTENU_PAGE_linkDownloadDce")
-    if link_dce.parent.parent.attrs['style'] == 'display:none':
+    if not link_dce:
         filename_dce = None
     else:
         url_dce = 'https://www.marches-publics.gouv.fr/index.php?page=entreprise.EntrepriseDemandeTelechargementDce&refConsultation={}&orgAcronyme={}'.format(annonce_id, org_acronym)
