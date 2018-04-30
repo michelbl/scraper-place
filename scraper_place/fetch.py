@@ -22,8 +22,7 @@ URL_SEARCH = 'https://www.marches-publics.gouv.fr/?page=entreprise.EntrepriseAdv
 PAGE_STATE_REGEX = '<input type="hidden" name="PRADO_PAGESTATE" id="PRADO_PAGESTATE" value="([a-zA-Z0-9/+=]+)"'
 LINK_REGEX = r'^https://www\.marches-publics\.gouv\.fr/\?page=entreprise\.EntrepriseDetailsConsultation&refConsultation=([\d]+)&orgAcronyme=([\da-z]+)$'
 REGLEMENT_REGEX = r'^https://www\.marches-publics\.gouv\.fr/index.php\?page=entreprise\.EntrepriseDownloadReglement&reference=([a-zA-Z\d]+)&orgAcronyme=([\da-z]+)$'
-BOAMP_REGEX = r'^http://www\.boamp\.fr/index\.php/avis/detail/([\d-]+)$'
-
+BOAMP_REGEX = r'^http://www\.boamp\.fr/(?:index\.php/)?avis/detail/([\d-]+)(?:/[\d]+)?$'
 
 
 
@@ -177,6 +176,7 @@ def fetch_data(link_annonce):
 
     links_reglements = []
     links_dces = []
+    links_avis = []
 
     for link in file_links:
         link_id = link.attrs['id']
@@ -191,13 +191,17 @@ def fetch_data(link_annonce):
             links_reglements.append(link_href)
         elif link_id == 'linkDownloadDce':
             links_dces.append(link_href)
+        elif link_id == 'linkDownloadAvis':
+            links_avis.append(link_href)
         else:
-            raise Exception('Unknown link type {} : '.format(link_id, link_href))
+            raise Exception('Unknown link type {} : {}'.format(link_id, link_href))
 
     assert len(links_reglements) <= 1
     link_reglement = links_reglements[0] if links_reglements else None
     assert len(links_dces) <= 1
     link_dce = links_dces[0] if links_dces else None
+    assert len(links_avis) <= 1
+    link_avis = links_avis[0] if links_avis else None
 
 
     def write_response_to_file(annonce_id, org_acronym, filename, file_type, response):
@@ -209,7 +213,17 @@ def fetch_data(link_annonce):
 
     # Get avis
 
-    filename_avis = None
+    if not link_avis:
+        filename_avis = None
+    else:
+        response_avis = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_avis), stream=True)
+        assert response_avis.status_code == 200
+        content_type = response_avis.headers['Content-Type']
+        assert content_type in {'application/pdf', }, content_type
+        regex_attachment = r'^attachment; filename="([^"]+)";'
+        filename_avis = re.match(regex_attachment, response_avis.headers['Content-Disposition']).groups()[0]
+
+        write_response_to_file(annonce_id, org_acronym, filename_avis, 'avis', response_avis)
 
 
     # Fetch reglement
