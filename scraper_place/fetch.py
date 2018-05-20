@@ -177,6 +177,7 @@ def fetch_data(link_annonce):
     links_reglements = []
     links_dces = []
     links_avis = []
+    links_complements = []
 
     for link in file_links:
         link_href = link.attrs['href']
@@ -198,6 +199,8 @@ def fetch_data(link_annonce):
             links_dces.append(link_href)
         elif link_id == 'linkDownloadAvis':
             links_avis.append(link_href)
+        elif link_id == 'linkDownloadComplement':
+            links_complements.append(link_href)
         else:
             raise Exception('Unknown link type {} : {}'.format(link_id, link_href))
 
@@ -208,6 +211,8 @@ def fetch_data(link_annonce):
     # Avis rectificatifs...
     # assert len(links_avis) <= 1
     link_avis = links_avis[0] if links_avis else None
+    assert len(links_complements) <= 1
+    link_complement = links_complements[0] if links_complements else None
 
 
     def write_response_to_file(annonce_id, org_acronym, filename, file_type, response):
@@ -249,7 +254,15 @@ def fetch_data(link_annonce):
 
     # Fetch complement
 
-    filename_complement = None
+    if not link_complement:
+        filename_complement = None
+    else:
+        response_complement = requests.get(link_complement, stream=True)
+        assert response_complement.status_code == 200
+        regex_attachment = r'^attachment; filename="([^"]+)"'
+        filename_complement = re.match(regex_attachment, response_complement.headers['Content-Disposition']).groups()[0]
+
+        write_response_to_file(annonce_id, org_acronym, filename_complement, 'complement', response_complement)
 
 
     # Get Dossier de Consultation aux Entreprises
