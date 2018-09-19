@@ -9,6 +9,7 @@ import datetime
 import re
 from collections import Counter
 import traceback
+import os
 
 import requests
 from bs4 import BeautifulSoup
@@ -71,6 +72,7 @@ def process_link(link, connection, cursor):
         (
             annonce_id, org_acronym, links_boamp, reference, intitule, objet, reglement_ref,
             filename_reglement, filename_complement, filename_avis, filename_dce,
+            file_size_reglement, file_size_complement, file_size_avis, file_size_dce,
         ) = fetch_data(link)
     except Exception as exception:
         print("Warning: exception occured ({}: {}) on {}".format(type(exception).__name__, exception, link))
@@ -84,21 +86,27 @@ def process_link(link, connection, cursor):
         INSERT INTO dce (
             annonce_id, org_acronym, links_boamp,
             reference, intitule, objet,
-            reglement_ref, filename_reglement, filename_complement, filename_avis, filename_dce,
+            reglement_ref,
+            filename_reglement, filename_complement, filename_avis, filename_dce,
+            file_size_reglement, file_size_complement, file_size_avis, file_size_dce,
             fetch_datetime,
             state
             )
             VALUES (
             %s, %s, %s,
             %s, %s, %s,
-            %s, %s, %s, %s, %s,
+            %s,
+            %s, %s, %s, %s,
+            %s, %s, %s, %s,
             %s,
             %s
            )""",
         (
             annonce_id, org_acronym, links_boamp,
             reference, intitule, objet,
-            reglement_ref, filename_reglement, filename_complement, filename_avis, filename_dce,
+            reglement_ref,
+            filename_reglement, filename_complement, filename_avis, filename_dce,
+            file_size_reglement, file_size_complement, file_size_avis, file_size_dce,
             now,
             STATE_FETCH_OK
             )
@@ -220,27 +228,28 @@ def fetch_data(link_annonce):
         with open(internal_filepath, 'wb') as file_object:
             for chunk in response.iter_content(8192):
                 file_object.write(chunk)
+        return os.path.getsize(internal_filepath)
 
 
     # Get avis
 
-    if not link_avis:
-        filename_avis = None
-    else:
+    filename_avis = None
+    file_size_avis = None
+    if link_avis:
         response_avis = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_avis), stream=True)
         assert response_avis.status_code == 200
         regex_attachment = r'^attachment; filename="([^"]+)"'
         filename_avis = re.match(regex_attachment, response_avis.headers['Content-Disposition']).groups()[0]
 
-        write_response_to_file(annonce_id, org_acronym, filename_avis, 'avis', response_avis)
+        file_size_avis = write_response_to_file(annonce_id, org_acronym, filename_avis, 'avis', response_avis)
 
 
     # Fetch reglement
 
-    if not link_reglement:
-        filename_reglement = None
-        reglement_ref = None
-    else:
+    filename_reglement = None
+    reglement_ref = None
+    file_size_reglement = None
+    if link_reglement:
         reglement_ref = re.match(REGLEMENT_REGEX, link_reglement).groups()[0]
         response_reglement = requests.get(link_reglement, stream=True)
         assert response_reglement.status_code == 200
@@ -249,27 +258,27 @@ def fetch_data(link_annonce):
         regex_attachment = r'^attachment; filename="([^"]+)";$'
         filename_reglement = re.match(regex_attachment, response_reglement.headers['Content-Disposition']).groups()[0]
 
-        write_response_to_file(annonce_id, org_acronym, filename_reglement, 'reglement', response_reglement)
+        file_size_reglement = write_response_to_file(annonce_id, org_acronym, filename_reglement, 'reglement', response_reglement)
 
 
     # Fetch complement
 
-    if not link_complement:
-        filename_complement = None
-    else:
+    filename_complement = None
+    file_size_complement = None
+    if link_complement:
         response_complement = requests.get(link_complement, stream=True)
         assert response_complement.status_code == 200
         regex_attachment = r'^attachment; filename="([^"]+)"'
         filename_complement = re.match(regex_attachment, response_complement.headers['Content-Disposition']).groups()[0]
 
-        write_response_to_file(annonce_id, org_acronym, filename_complement, 'complement', response_complement)
+        file_size_complement = write_response_to_file(annonce_id, org_acronym, filename_complement, 'complement', response_complement)
 
 
     # Get Dossier de Consultation aux Entreprises
 
-    if not link_dce:
-        filename_dce = None
-    else:
+    filename_dce = None
+    file_size_dce = None
+    if link_dce:
         url_dce = 'https://www.marches-publics.gouv.fr/index.php?page=entreprise.EntrepriseDemandeTelechargementDce&refConsultation={}&orgAcronyme={}'.format(annonce_id, org_acronym)
         response_dce = requests.get(url_dce)
         assert response_dce.status_code == 200
@@ -296,10 +305,14 @@ def fetch_data(link_annonce):
         regex_attachment = r'^attachment; filename="([^"]+)";$'
         filename_dce = re.match(regex_attachment, response_dce3.headers['Content-Disposition']).groups()[0]
 
-        write_response_to_file(annonce_id, org_acronym, filename_dce, 'dce', response_dce3)
-    
+        file_size_dce = write_response_to_file(annonce_id, org_acronym, filename_dce, 'dce', response_dce3)
 
-    return annonce_id, org_acronym, links_boamp, reference, intitule, objet, reglement_ref, filename_reglement, filename_complement, filename_avis, filename_dce
+
+    return (
+        annonce_id, org_acronym, links_boamp, reference, intitule, objet, reglement_ref,
+        filename_reglement, filename_complement, filename_avis, filename_dce,
+        file_size_reglement, file_size_complement, file_size_avis, file_size_dce,
+        )
 
 
 def init():

@@ -214,7 +214,7 @@ def extract_file(file_path, tika_server_url):
     content_list, embedded_resource_paths = filter_content(tika_result)
 
     content = '\n'.join(content_list)
-    
+
     # See ipython notebook stats_elasticsearch
     if len(content) > 10000000:
         content = content[:5000000] + content[-5000000:]
