@@ -44,7 +44,14 @@ def index():
     dce_data_list = cursor.fetchall()
 
     try:
-        ec2_client, instance_id, ec2_ipv4, ssh_client = init_ec2()
+        ec2_client = boto3.client(
+            'ec2',
+            aws_access_key_id=CONFIG_AWS_EC2['aws_access_key_id'],
+            aws_secret_access_key=CONFIG_AWS_EC2['aws_secret_access_key'],
+            region_name=CONFIG_AWS_EC2['region_name'],
+        )
+        instance_id = launch_ec2(ec2_client)
+        ec2_ipv4, ssh_client = init_ec2(ec2_client, instance_id)
         tika_server_url = 'http://{}:9998/'.format(ec2_ipv4)
 
         for dce_data in dce_data_list:
@@ -259,14 +266,7 @@ def is_unwanted_type(filename):
     return True
 
 
-def init_ec2():
-    ec2_client = boto3.client(
-        'ec2',
-        aws_access_key_id=CONFIG_AWS_EC2['aws_access_key_id'],
-        aws_secret_access_key=CONFIG_AWS_EC2['aws_secret_access_key'],
-        region_name=CONFIG_AWS_EC2['region_name'],
-    )
-
+def launch_ec2(ec2_client):
     print('Info: Launching EC2 instance...')
 
     response = ec2_client.run_instances(
@@ -291,6 +291,10 @@ def init_ec2():
 
     instance_id = response['Instances'][0]['InstanceId']
 
+    return instance_id
+
+
+def init_ec2(ec2_client, instance_id):
     waiter = ec2_client.get_waiter('instance_status_ok')
     waiter.wait(
         InstanceIds=[instance_id]
@@ -313,7 +317,7 @@ def init_ec2():
     )
 
     ssh_channel = ssh_client.get_transport().open_session()
-    ssh_channel.exec_command('wget http://apache.crihan.fr/dist/tika/tika-server-1.18.jar')
+    ssh_channel.exec_command('wget http://www-us.apache.org/dist/tika/tika-server-1.19.1.jar')
     assert ssh_channel.recv_exit_status() == 0
 
     ssh_channel = ssh_client.get_transport().open_session()
@@ -321,13 +325,13 @@ def init_ec2():
     assert ssh_channel.recv_exit_status() == 0
 
     ssh_channel = ssh_client.get_transport().open_session()
-    ssh_channel.exec_command('java -Xmx7000m -jar tika-server-1.18.jar --host=* >tika-server.log 2>&1')
+    ssh_channel.exec_command('java -Xmx7000m -jar tika-server-1.19.1.jar --host=* >tika-server.log 2>&1')
 
     time.sleep(10)  # give some time to Tika to start
 
     print('Info: Launched Tika server')
 
-    return ec2_client, instance_id, ec2_ipv4, ssh_client
+    return ec2_ipv4, ssh_client
 
 
 def terminate_ec2(ec2_client, instance_id, ssh_client):
