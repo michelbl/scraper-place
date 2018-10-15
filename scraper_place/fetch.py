@@ -168,8 +168,11 @@ def fetch_data(link_annonce):
     labels = soup.find_all(class_="atx-static-label")
     infos = soup.find_all(class_="atx-static-info")
 
-    index_ref = [label.text for label in labels].index('Référence | Intitulé :')
-    reference, intitule = infos[index_ref].text.strip().split(' | ')
+    index_reference = [label.text for label in labels].index('Référence :')
+    reference = infos[index_reference].text.strip()
+
+    index_intitule = [label.text for label in labels].index('Intitulé :')
+    intitule = infos[index_intitule].text.strip()
 
     index_objet = [label.text for label in labels].index('Objet :')
     objet = infos[index_objet].text.strip()
