@@ -165,17 +165,16 @@ def fetch_data(link_annonce):
 
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    labels = soup.find_all(class_="atx-static-label")
-    infos = soup.find_all(class_="atx-static-info")
+    recap_data = soup.find_all(class_="col-md-10 text-justify")
 
-    index_reference = [label.text for label in labels].index('Référence :')
-    reference = infos[index_reference].text.strip()
+    assert recap_data[0].find('label').text.strip() == "Référence :"
+    reference = recap_data[0].find('div').text.strip()
 
-    index_intitule = [label.text for label in labels].index('Intitulé :')
-    intitule = infos[index_intitule].text.strip()
+    assert recap_data[1].find('label').text.strip() == "Intitulé :"
+    intitule = recap_data[1].find('div').text.strip()
 
-    index_objet = [label.text for label in labels].index('Objet :')
-    objet = infos[index_objet].text.strip()
+    assert recap_data[2].find('label').text.strip() == "Objet :"
+    objet = recap_data[2].find('div').text.strip()
 
 
     # Get links to files
