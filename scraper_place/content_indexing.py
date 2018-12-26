@@ -43,15 +43,17 @@ def index():
     )
     dce_data_list = cursor.fetchall()
 
+    ec2_client = boto3.client(
+        'ec2',
+        aws_access_key_id=CONFIG_AWS_EC2['aws_access_key_id'],
+        aws_secret_access_key=CONFIG_AWS_EC2['aws_secret_access_key'],
+        region_name=CONFIG_AWS_EC2['region_name'],
+    )
+    instance_id = launch_ec2(ec2_client)
+    ec2_ipv4, ssh_client = init_ec2(ec2_client, instance_id)
+
     try:
-        ec2_client = boto3.client(
-            'ec2',
-            aws_access_key_id=CONFIG_AWS_EC2['aws_access_key_id'],
-            aws_secret_access_key=CONFIG_AWS_EC2['aws_secret_access_key'],
-            region_name=CONFIG_AWS_EC2['region_name'],
-        )
-        instance_id = launch_ec2(ec2_client)
-        ec2_ipv4, ssh_client = init_ec2(ec2_client, instance_id)
+        install_on_ec2(ssh_client)
         tika_server_url = 'http://{}:9998/'.format(ec2_ipv4)
 
         for dce_data in dce_data_list:
@@ -316,6 +318,10 @@ def init_ec2(ec2_client, instance_id):
         pkey=ssh_key
     )
 
+    return ec2_ipv4, ssh_client
+
+
+def install_on_ec2(ssh_client):
     ssh_channel = ssh_client.get_transport().open_session()
     ssh_channel.exec_command('wget http://www-us.apache.org/dist/tika/tika-server-1.19.1.jar')
     assert ssh_channel.recv_exit_status() == 0
@@ -330,8 +336,6 @@ def init_ec2(ec2_client, instance_id):
     time.sleep(10)  # give some time to Tika to start
 
     print('Info: Launched Tika server')
-
-    return ec2_ipv4, ssh_client
 
 
 def terminate_ec2(ec2_client, instance_id, ssh_client):
