@@ -323,7 +323,7 @@ def init_ec2(ec2_client, instance_id):
 
 def install_on_ec2(ssh_client):
     ssh_channel = ssh_client.get_transport().open_session()
-    ssh_channel.exec_command('wget http://www-us.apache.org/dist/tika/tika-server-1.19.1.jar')
+    ssh_channel.exec_command('wget http://www-us.apache.org/dist/tika/tika-server-1.20.jar')
     assert ssh_channel.recv_exit_status() == 0
 
     ssh_channel = ssh_client.get_transport().open_session()
@@ -331,7 +331,7 @@ def install_on_ec2(ssh_client):
     assert ssh_channel.recv_exit_status() == 0
 
     ssh_channel = ssh_client.get_transport().open_session()
-    ssh_channel.exec_command('java -Xmx7000m -jar tika-server-1.19.1.jar --host=* >tika-server.log 2>&1')
+    ssh_channel.exec_command('java -Xmx7000m -jar tika-server-1.20.jar --host=* >tika-server.log 2>&1')
 
     time.sleep(10)  # give some time to Tika to start
 
