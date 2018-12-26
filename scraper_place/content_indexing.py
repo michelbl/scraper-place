@@ -339,9 +339,12 @@ def install_on_ec2(ssh_client):
 
 
 def terminate_ec2(ec2_client, instance_id, ssh_client):
-    sftp_client = ssh_client.open_sftp()
-    sftp_client.get('tika-server.log', os.path.join(CONFIG_AWS_EC2['logs_directory'], 'tika-server.log'))
-    sftp_client.close()
+    try:
+        sftp_client = ssh_client.open_sftp()
+        sftp_client.get('tika-server.log', os.path.join(CONFIG_AWS_EC2['logs_directory'], 'tika-server.log'))
+        sftp_client.close()
+    except Exception as e:
+        print('Warning: Failed to download tika log')
 
     ssh_client.close()
 
