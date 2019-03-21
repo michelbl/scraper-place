@@ -211,6 +211,8 @@ def fetch_data(link_annonce):
             links_avis.append(link_href)
         elif link_id == 'linkDownloadComplement':
             links_complements.append(link_href)
+        elif link_id == 'linkDownloadDume':
+            pass  # "DUME acheteur" does not contain useful information
         else:
             raise Exception('Unknown link type {} : {}'.format(link_id, link_href))
 
