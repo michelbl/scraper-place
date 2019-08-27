@@ -271,7 +271,7 @@ def fetch_data(link_annonce):
     filename_complement = None
     file_size_complement = None
     if link_complement:
-        response_complement = requests.get(link_complement, stream=True)
+        response_complement = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_complement), stream=True)
         assert response_complement.status_code == 200
         regex_attachment = r'^attachment; filename="([^"]+)"'
         filename_complement = re.match(regex_attachment, response_complement.headers['Content-Disposition']).groups()[0]
