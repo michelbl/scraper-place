@@ -22,7 +22,7 @@ URL_SEARCH = 'https://www.marches-publics.gouv.fr/?page=entreprise.EntrepriseAdv
 
 PAGE_STATE_REGEX = '<input type="hidden" name="PRADO_PAGESTATE" id="PRADO_PAGESTATE" value="([a-zA-Z0-9/+=]+)"'
 LINK_REGEX = r'^https://www\.marches-publics\.gouv\.fr/\?page=entreprise\.EntrepriseDetailsConsultation&refConsultation=([\d]+)&orgAcronyme=([\da-z]+)$'
-REGLEMENT_REGEX = r'^https://www\.marches-publics\.gouv\.fr/index.php\?page=entreprise\.EntrepriseDownloadReglement&reference=([a-zA-Z\d]+)&orgAcronyme=([\da-z]+)$'
+REGLEMENT_REGEX = r'^/index.php\?page=entreprise\.EntrepriseDownloadReglement&reference=([a-zA-Z\d]+)&orgAcronyme=([\da-z]+)$'
 BOAMP_REGEX = r'^http://www\.boamp\.fr/(?:index\.php/)?avis/detail/([\d-]+)(?:/[\d]+)?$'
 
 
@@ -256,7 +256,7 @@ def fetch_data(link_annonce):
     file_size_reglement = None
     if link_reglement:
         reglement_ref = re.match(REGLEMENT_REGEX, link_reglement).groups()[0]
-        response_reglement = requests.get(link_reglement, stream=True)
+        response_reglement = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_reglement), stream=True)
         assert response_reglement.status_code == 200
         content_type = response_reglement.headers['Content-Type']
         assert content_type in {'application/octet-stream', 'application/zip'}, content_type
