@@ -288,13 +288,14 @@ def fetch_data(link_annonce):
         response_dce = requests.get(url_dce)
         assert response_dce.status_code == 200
         page_state = re.search(PAGE_STATE_REGEX, response_dce.text).groups()[0]
+        cookie = response_dce.headers['Set-Cookie']
 
         data = {
             'PRADO_PAGESTATE': page_state,
             'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$validateButton',
             'ctl0$CONTENU_PAGE$EntrepriseFormulaireDemande$RadioGroup': 'ctl0$CONTENU_PAGE$EntrepriseFormulaireDemande$choixAnonyme',
         }
-        response_dce2 = requests.post(url_dce, data=data)
+        response_dce2 = requests.post(url_dce, headers={'Cookie': cookie}, data=data)
         assert response_dce2.status_code == 200
         page_state = re.search(PAGE_STATE_REGEX, response_dce2.text).groups()[0]
 
@@ -302,7 +303,7 @@ def fetch_data(link_annonce):
             'PRADO_PAGESTATE': page_state,
             'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$EntrepriseDownloadDce$completeDownload',
         }
-        response_dce3 = requests.post(url_dce, data=data, stream=True)
+        response_dce3 = requests.post(url_dce, headers={'Cookie': cookie}, data=data, stream=True)
         assert response_dce3.status_code == 200
 
         content_type = response_dce3.headers['Content-Type']
