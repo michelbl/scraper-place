@@ -124,10 +124,11 @@ def fetch_current_annonces(nb_pages=0):
     """
     links_by_page = []
     page_state = None
+    cookie = None
     try:
         counter = 0
         while (nb_pages == 0) or (counter < nb_pages):
-            links, page_state = next_page(page_state)
+            links, page_state, cookie = next_page(page_state, cookie)
             links_by_page.append(links)
             counter += 1
 
@@ -325,8 +326,9 @@ def init():
 
     # get page state
     response = requests.get(URL_SEARCH)
-    assert response.status_code == 200
+    assert response.status_code == 200, response.status_code
     page_state = re.search(PAGE_STATE_REGEX, response.text).groups()[0]
+    cookie = response.headers['Set-Cookie']
 
     # use page with 20 results
     data = {
@@ -334,17 +336,17 @@ def init():
         'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$resultSearch$listePageSizeTop',
         'ctl0$CONTENU_PAGE$resultSearch$listePageSizeTop': 20,
     }
-    response = requests.post(URL_SEARCH, data=data)
-    assert response.status_code == 200
+    response = requests.post(URL_SEARCH, headers={'Cookie': cookie}, data=data)
+    assert response.status_code == 200, response.status_code
     links = extract_links(response, LINK_REGEX)
     page_state = re.search(PAGE_STATE_REGEX, response.text).groups()[0]
 
-    return links, page_state
+    return links, page_state, cookie
 
 class NoMoreResultsException(Exception):
     pass
 
-def next_page(page_state):
+def next_page(page_state, cookie):
     if not page_state:
         return init()
 
@@ -352,7 +354,7 @@ def next_page(page_state):
         'PRADO_PAGESTATE': page_state,
         'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$resultSearch$PagerTop$ctl2',
     }
-    response = requests.post(URL_SEARCH, data=data)
+    response = requests.post(URL_SEARCH, headers={'Cookie': cookie}, data=data)
 
     if response.status_code == 500:
         raise NoMoreResultsException()
@@ -361,7 +363,7 @@ def next_page(page_state):
     links = extract_links(response, LINK_REGEX)
     page_state = re.search(PAGE_STATE_REGEX, response.text).groups()[0]
 
-    return links, page_state
+    return links, page_state, cookie
 
 
 
