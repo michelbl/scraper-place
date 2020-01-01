@@ -3,24 +3,19 @@
 
 import os
 
-import psycopg2
+from pymongo import MongoClient
 import boto3
 from unidecode import unidecode
 
-from scraper_place.config import CONFIG_DATABASE, CONFIG_AWS_GLACIER, STATE_FETCH_OK, STATE_GLACIER_OK, STATE_GLACIER_KO, CONFIG_ENV, build_internal_filepath
+from scraper_place.config import CONFIG_AWS_GLACIER, STATE_FETCH_OK, STATE_GLACIER_OK, STATE_GLACIER_KO, CONFIG_ENV, build_internal_filepath
 
 
 def save():
     """save(): Save all the DCEs to AWS Glacier and keep their archive id in the database.
     """
 
-    # Open connection
-    connection = psycopg2.connect(
-        dbname=CONFIG_DATABASE['name'],
-        user=CONFIG_DATABASE['username'],
-        password=CONFIG_DATABASE['password'],
-    )
-    cursor = connection.cursor()
+    client = MongoClient()
+    collection = client.place.dce
 
     glacier_client = boto3.client(
         'glacier',
@@ -29,30 +24,22 @@ def save():
         region_name=CONFIG_AWS_GLACIER['region_name'],
     )
 
-    cursor.execute(
-        """
-        SELECT annonce_id, org_acronym, intitule,
-            filename_reglement, filename_complement, filename_avis, filename_dce
-        FROM dce
-        WHERE state = %s
-        ;""",
-        (STATE_FETCH_OK, )
-    )
+    cursor = collection.find({'state': STATE_FETCH_OK})
+    for dce_data in cursor:
+        save_dce(dce_data=dce_data, glacier_client=glacier_client)
 
-    dce_data_list = cursor.fetchall()
-    for dce_data in dce_data_list:
-        annonce_id, org_acronym, intitule, filename_reglement, filename_complement, filename_avis, filename_dce = dce_data
-        save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_complement, filename_avis, filename_dce, connection, cursor, glacier_client)
-
-    cursor.close()
-    connection.close()
+    client.close()
 
 
-def save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_complement, filename_avis, filename_dce, connection, cursor, glacier_client):
+def save_dce(dce_data, glacier_client):
     """save_dce(): Save one DCE to AWS Glacier
     """
+    annonce_id = dce_data['annonce_id']
     file_types = ['reglement', 'complement', 'avis', 'dce']
-    filenames = [filename_reglement, filename_complement, filename_avis, filename_dce]
+    filenames = [dce_data['filename_reglement'], dce_data['filename_complement'], dce_data['filename_avis'], dce_data['filename_dce']]
+
+    client = MongoClient()
+    collection = client.place.dce
 
     # Checks if the file is not too large to be uploaded using boto3 (max 4Go)
     # If a file is that large, we probably don't want to backup nor index it.
@@ -60,34 +47,29 @@ def save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_com
         if not filename:
             continue
 
-        internal_filepath = build_internal_filepath(annonce_id, org_acronym, filename, file_type)
+        internal_filepath = build_internal_filepath(annonce_id=annonce_id, original_filename=filename, file_type=file_type)
 
         file_size = os.path.getsize(internal_filepath)
         if file_size >= 4294967296:
             print('Warning: {} is too large to be saved on AWS Glacier'.format(internal_filepath))
 
-            cursor.execute(
-                """
-                UPDATE dce
-                SET state = %s
-                WHERE annonce_id = %s AND org_acronym = %s
-                ;""",
-                (STATE_GLACIER_KO, annonce_id, org_acronym)
+            collection.update_one(
+                {'annonce_id': annonce_id},
+                {'$set': {'state': STATE_GLACIER_KO}},
             )
-            connection.commit()
-
+            client.close()
             return
 
     for file_type, filename in zip(file_types, filenames):
         if not filename:
             continue
 
-        archive_description = '{}-{} {} ({}) {}'.format(annonce_id, org_acronym, file_type, filename, intitule)
+        archive_description = '{} {} ({}) {}'.format(annonce_id, file_type, filename, dce_data['intitule'])
         archive_description = unidecode(archive_description)
         archive_description = archive_description[:1023]
         archive_description = archive_description.replace('\t', '    ')
 
-        internal_filepath = build_internal_filepath(annonce_id, org_acronym, filename, file_type)
+        internal_filepath = build_internal_filepath(annonce_id=annonce_id, original_filename=filename, file_type=file_type)
         if CONFIG_ENV['env'] != 'production':
             print('Debug: Saving {} on AWS Glacier...'.format(internal_filepath))
             print(archive_description)
@@ -99,26 +81,18 @@ def save_dce(annonce_id, org_acronym, intitule, filename_reglement, filename_com
             )
         assert response['ResponseMetadata']['HTTPStatusCode'] == 201, archive_description
         archive_id = response['archiveId']
-        psql_request_template = """
-            UPDATE dce
-            SET glacier_id_{} = %s
-            WHERE annonce_id = %s AND org_acronym = %s
-            ;""".format(file_type)
-        cursor.execute(
-            psql_request_template,
-            (archive_id, annonce_id, org_acronym)
-        )
-        connection.commit()
 
-    cursor.execute(
-        """
-        UPDATE dce
-        SET state = %s
-        WHERE annonce_id = %s AND org_acronym = %s
-        ;""",
-        (STATE_GLACIER_OK, annonce_id, org_acronym)
+        collection.update_one(
+            {'annonce_id': annonce_id},
+            {'$set': {'glacier_id_{}'.format(file_type): archive_id}},
+        )
+
+    collection.update_one(
+        {'annonce_id': annonce_id},
+        {'$set': {'state': STATE_GLACIER_OK}},
     )
-    connection.commit()
 
     if CONFIG_ENV['env'] != 'production':
-        print('Debug: Saved {}-{} on AWS Glavier'.format(annonce_id, org_acronym))
+        print('Debug: Saved {} on AWS Glavier'.format(annonce_id))
+
+    client.close()

@@ -3,14 +3,6 @@
 env=production
 #env=dev
 
-[database]
-
-host=localhost
-port=1234
-name=place
-username=place
-password=***
-
 [file_storage]
 
 public_directory=/home/michel/scraper-place/data/public

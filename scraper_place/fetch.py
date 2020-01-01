@@ -13,9 +13,9 @@ import os
 
 import requests
 from bs4 import BeautifulSoup
-import psycopg2
+from pymongo import MongoClient
 
-from scraper_place.config import CONFIG_DATABASE, CONFIG_ENV, STATE_FETCH_OK, build_internal_filepath
+from scraper_place.config import CONFIG_ENV, STATE_FETCH_OK, build_internal_filepath
 
 
 URL_SEARCH = 'https://www.marches-publics.gouv.fr/?page=entreprise.EntrepriseAdvancedSearch&AllCons'
@@ -31,14 +31,6 @@ def fetch_new_dce():
     """fetch_new_dce: fetch the DCEs that are not already in the database, stores metadata in database and stores the archives in the public directory.
     """
 
-    # Open connection
-    connection = psycopg2.connect(
-        dbname=CONFIG_DATABASE['name'],
-        user=CONFIG_DATABASE['username'],
-        password=CONFIG_DATABASE['password'],
-    )
-    cursor = connection.cursor()
-
     if CONFIG_ENV['env'] == 'production':
         nb_pages = 0
     else:
@@ -48,70 +40,37 @@ def fetch_new_dce():
 
     nb_processed = 0
     for link in links:
-        nb_processed += process_link(link, connection, cursor)
+        nb_processed += process_link(link)
     print("Info: Processed {} DCE".format(nb_processed))
 
-    cursor.close()
-    connection.close()
 
-
-def process_link(link, connection, cursor):
+def process_link(link):
     """
     process_link : Download data and store it in database.
     Return the number of stored DCE (0 or 1).
     """
-    annonce_id, org_acronym = re.match(LINK_REGEX, link).groups()
+    annonce_id = re.match(LINK_REGEX, link).groups()[0]
+
+    client = MongoClient()
+    collection = client.place.dce
 
     # abort if the DCE is already processed
-    cursor.execute("SELECT annonce_id, org_acronym FROM dce WHERE annonce_id = %s AND org_acronym = %s;", (annonce_id, org_acronym))
-    results = cursor.fetchall()
-    if results:
+    if collection.count_documents({'annonce_id': annonce_id}, limit=1):
         return 0
 
     try:
-        (
-            annonce_id, org_acronym, links_boamp, reference, intitule, objet, reglement_ref,
-            filename_reglement, filename_complement, filename_avis, filename_dce,
-            file_size_reglement, file_size_complement, file_size_avis, file_size_dce,
-        ) = fetch_data(link)
+        annonce_data = fetch_data(link)
     except Exception as exception:
         print("Warning: exception occured ({}: {}) on {}".format(type(exception).__name__, exception, link))
         traceback.print_exc()
         return 0
 
-    now = datetime.datetime.now()
+    annonce_data['fetch_datetime'] = datetime.datetime.now()
+    annonce_data['state'] = STATE_FETCH_OK
 
-    cursor.execute(
-        """
-        INSERT INTO dce (
-            annonce_id, org_acronym, links_boamp,
-            reference, intitule, objet,
-            reglement_ref,
-            filename_reglement, filename_complement, filename_avis, filename_dce,
-            file_size_reglement, file_size_complement, file_size_avis, file_size_dce,
-            fetch_datetime,
-            state
-            )
-            VALUES (
-            %s, %s, %s,
-            %s, %s, %s,
-            %s,
-            %s, %s, %s, %s,
-            %s, %s, %s, %s,
-            %s,
-            %s
-           )""",
-        (
-            annonce_id, org_acronym, links_boamp,
-            reference, intitule, objet,
-            reglement_ref,
-            filename_reglement, filename_complement, filename_avis, filename_dce,
-            file_size_reglement, file_size_complement, file_size_avis, file_size_dce,
-            now,
-            STATE_FETCH_OK
-            )
-        )
-    connection.commit()
+    collection.insert_one(annonce_data)
+    client.close()
+
     return 1
 
 
@@ -314,11 +273,24 @@ def fetch_data(link_annonce):
         file_size_dce = write_response_to_file(annonce_id, org_acronym, filename_dce, 'dce', response_dce3)
 
 
-    return (
-        annonce_id, org_acronym, links_boamp, reference, intitule, objet, reglement_ref,
-        filename_reglement, filename_complement, filename_avis, filename_dce,
-        file_size_reglement, file_size_complement, file_size_avis, file_size_dce,
-        )
+    return {
+        'annonce_id': annonce_id,
+        'org_acronym': org_acronym,
+        'links_boamp': links_boamp,
+        'reference': reference,
+        'intitule': intitule,
+        'objet': objet,
+        'reglement_ref': reglement_ref,
+        'filename_reglement': filename_reglement,
+        'filename_complement': filename_complement,
+        'filename_avis': filename_avis,
+        'filename_dce': filename_dce,
+        'file_size_reglement': file_size_reglement,
+        'file_size_complement': file_size_complement,
+        'file_size_avis': file_size_avis,
+        'file_size_dce': file_size_dce,
+    }
+
 
 
 def init():

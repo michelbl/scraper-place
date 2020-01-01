@@ -16,7 +16,6 @@ setup(
         'jupyter>=1.0.0',
         'matplotlib>=2.1.2',
         'paramiko>=2.4.0',
-        'psycopg2-binary>=2.7.4',
         'pymongo>=3.10.0,<4',
         'requests>=2.18.4',
         'Unidecode>=1.0.22',
