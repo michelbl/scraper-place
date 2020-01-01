@@ -1,11 +1,12 @@
 config.ini
 settings.json
+scraper-place.pem
+pgpassword
+backup_database.sh
 
 data
 
 .ipynb_checkpoints
 __pycache__
+*.pyc
 scraper_place.egg-info
-scraper-place.pem
-pgpassword
-backup_database.sh
