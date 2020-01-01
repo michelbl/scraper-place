@@ -29,7 +29,7 @@ STATE_CONTENT_INDEXATION_KO = 'content_indexing_ko'
 
 
 def build_internal_filepath(annonce_id, original_filename, file_type):
-    """build_internal_filepath(): build the filename used for storage
+    """build_internal_filepath: build the filename used for storage
 
     file_type: One of 'reglement', 'complement', 'avis', 'dce'
     """

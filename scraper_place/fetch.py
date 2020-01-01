@@ -187,8 +187,8 @@ def fetch_data(link_annonce):
     link_complement = links_complements[0] if links_complements else None
 
 
-    def write_response_to_file(annonce_id, org_acronym, filename, file_type, response):
-        internal_filepath = build_internal_filepath(annonce_id, org_acronym, filename, file_type)
+    def write_response_to_file(annonce_id, filename, file_type, response):
+        internal_filepath = build_internal_filepath(annonce_id=annonce_id, original_filename=filename, file_type=file_type)
         with open(internal_filepath, 'wb') as file_object:
             for chunk in response.iter_content(8192):
                 file_object.write(chunk)
@@ -205,7 +205,7 @@ def fetch_data(link_annonce):
         regex_attachment = r'^attachment; filename="([^"]+)"'
         filename_avis = re.match(regex_attachment, response_avis.headers['Content-Disposition']).groups()[0]
 
-        file_size_avis = write_response_to_file(annonce_id, org_acronym, filename_avis, 'avis', response_avis)
+        file_size_avis = write_response_to_file(annonce_id=annonce_id, filename=filename_avis, file_type='avis', response=response_avis)
 
 
     # Fetch reglement
@@ -222,7 +222,7 @@ def fetch_data(link_annonce):
         regex_attachment = r'^attachment; filename="([^"]+)";$'
         filename_reglement = re.match(regex_attachment, response_reglement.headers['Content-Disposition']).groups()[0]
 
-        file_size_reglement = write_response_to_file(annonce_id, org_acronym, filename_reglement, 'reglement', response_reglement)
+        file_size_reglement = write_response_to_file(annonce_id=annonce_id, filename=filename_reglement, file_type='reglement', response=response_reglement)
 
 
     # Fetch complement
@@ -235,7 +235,7 @@ def fetch_data(link_annonce):
         regex_attachment = r'^attachment; filename="([^"]+)"'
         filename_complement = re.match(regex_attachment, response_complement.headers['Content-Disposition']).groups()[0]
 
-        file_size_complement = write_response_to_file(annonce_id, org_acronym, filename_complement, 'complement', response_complement)
+        file_size_complement = write_response_to_file(annonce_id=annonce_id, filename=filename_complement, file_type='complement', response=response_complement)
 
 
     # Get Dossier de Consultation aux Entreprises
@@ -270,7 +270,7 @@ def fetch_data(link_annonce):
         regex_attachment = r'^attachment; filename="([^"]+)";$'
         filename_dce = re.match(regex_attachment, response_dce3.headers['Content-Disposition']).groups()[0]
 
-        file_size_dce = write_response_to_file(annonce_id, org_acronym, filename_dce, 'dce', response_dce3)
+        file_size_dce = write_response_to_file(annonce_id=annonce_id, filename=filename_dce, file_type='dce', response=response_dce3)
 
 
     return {
