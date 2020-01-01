@@ -10,10 +10,7 @@ public_directory=/home/michel/scraper-place/data/public
 [aws_glacier]
 
 region_name=xxx
-vaule_name=xxx
-vault_arn=arn:aws:glacier:xxx:xxx:vaults/xxx
-
-iam_id=arn:aws:iam::xxx:user/xxx
+bucket_name=xxx
 aws_access_key_id=xxx
 aws_secret_access_key=xxx
 
@@ -29,8 +26,6 @@ document_type=dce
 [aws_ec2]
 
 region_name=xxx
-
-iam_id=xxx
 aws_access_key_id=xxx
 aws_secret_access_key=xxx
 

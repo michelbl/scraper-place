@@ -20,7 +20,7 @@ Curiously, a small fraction of the DCE appear in several pages, and this is not 
 
 ### Prerequisites
 
-* Install `postgresql`>=9.0 (may work on prior versions). Make sure it uses UTF-8 encoding.
+* Install `mongodb`>=4.2 (may work on prior versions).
 * If you plan to replicate the files on AWS Glacier, create a vault and create a IAM user with upload permission.
 * If you plan to index the data with ElasticSearch, install it. Make sure a tika server 1.17 (older versions may work) is reachable with the options `-enableUnsecureFeatures` and `-enableFileUrl`.
 * If you plan to run the Tika server on an AWS EC2 instance, configure it accordingly (give permissions RunInstances, TerminateInstances, DescribeInstances, DescribeInstanceStatus, add a key pair, allow SSH inbound traffic).
@@ -32,8 +32,8 @@ Curiously, a small fraction of the DCE appear in several pages, and this is not 
 * In the repository directory: `pip install --editable .`
 * Copy `config.ini.example` to `config.ini` and set your configuration.
 * Create the directory you configured in `config.ini` and make sure it is writable by the process that will run `scraper-place`.
-* Create a new database user with all privileges on a new table, with access by password (`md5` in `pg_hda.conf`).
-* Run `create_tables.ipynb` to prepare the database and ElasticSearch.
+* Create a table `dce` in database `place` with an index on `annonce_id`.
+* Run `create_tables.ipynb` to set up ElasticSearch.
 * Setup automatic backups for the database, see `backup_database.sh.example`.
 
 
