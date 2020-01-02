@@ -18,7 +18,7 @@ if __name__ == '__main__':
     filename = 'metadata-{}.json'.format(datetime.datetime.now().isoformat().split('T')[0])
     file_path = pathlib.Path(CONFIG_METADATA_BACKUP['repository']) / filename
 
-    with file_path.open('r') as f:
+    with file_path.open('w') as f:
         f.write(data_json)
 
     s3_resource = boto3.session.Session(
