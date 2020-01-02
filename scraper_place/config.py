@@ -14,6 +14,7 @@ CONFIG.read(CONFIG_PATH)
 
 CONFIG_ENV = dict(CONFIG.items('env'))
 CONFIG_FILE_STORAGE = dict(CONFIG.items('file_storage'))
+CONFIG_METADATA_BACKUPS = dict(CONFIG.items('metadata_backups'))
 CONFIG_AWS_GLACIER = dict(CONFIG.items('aws_glacier'))
 CONFIG_TIKA = dict(CONFIG.items('tika'))
 CONFIG_ELASTICSEARCH = dict(CONFIG.items('elasticsearch'))

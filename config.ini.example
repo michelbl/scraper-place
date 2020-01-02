@@ -7,6 +7,14 @@ env=production
 
 public_directory=/home/michel/scraper-place/data/public
 
+[backups_metadata]
+
+repository=/home/michel/projects/scraper-place/data/backups
+region_name=xxx
+bucket_name=xxx
+aws_access_key_id=xxx
+aws_secret_access_key=xxx
+
 [aws_glacier]
 
 region_name=xxx
@@ -20,7 +28,6 @@ aws_secret_access_key=xxx
 
 elasticsearch_server_url=http://localhost:9200/
 index_name=dce
-
 
 [aws_ec2]
 
