@@ -33,7 +33,7 @@ Curiously, a small fraction of the DCE appear in several pages, and this is not 
 * Copy `config.ini.example` to `config.ini` and set your configuration.
 * Create the directory you configured in `config.ini` and make sure it is writable by the process that will run `scraper-place`.
 * Create a table `dce` in database `place` with an index on `annonce_id`.
-* Run `create_tables.ipynb` to set up ElasticSearch.
+* Run `create_index.ipynb` to set up ElasticSearch.
 * Setup automatic backups for the database, see `backup_database.sh.example`.
 
 
