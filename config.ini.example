@@ -20,7 +20,6 @@ aws_secret_access_key=xxx
 
 elasticsearch_server_url=http://localhost:9200/
 index_name=dce
-document_type=dce
 
 
 [aws_ec2]
