@@ -31,5 +31,5 @@ if __name__ == '__main__':
         Filename=file_path.as_posix(),
         Bucket=CONFIG_METADATA_BACKUP['bucket_name'],
         Key=filename,
-        ExtraArgs={},
+        ExtraArgs={'StorageClass': 'ONEZONE_IA'},
     )
