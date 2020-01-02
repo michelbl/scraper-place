@@ -108,8 +108,30 @@ def index_dce(dce_data, tika_server_url, collection):
 
 
 def feed_elastisearch(annonce_id, content, collection):
-    data = collection.find_one({'annonce_id': annonce_id})
-    data['content'] = content
+    source_data = collection.find_one({'annonce_id': annonce_id})
+    data = {
+        'annonce_id': source_data['annonce_id'],
+        'org_acronym': source_data['org_acronym'],
+        'links_boamp': source_data['links_boamp'],
+        'reference': source_data['reference'],
+        'intitule': source_data['intitule'],
+        'objet': source_data['objet'],
+        'reglement_ref': source_data['reglement_ref'],
+        'filename_reglement': source_data['filename_reglement'],
+        'filename_complement': source_data['filename_complement'],
+        'filename_avis': source_data['filename_avis'],
+        'filename_dce': source_data['filename_dce'],
+        'fetch_datetime': source_data['fetch_datetime'],
+        'file_size_reglement': source_data['file_size_reglement'],
+        'file_size_complement': source_data['file_size_complement'],
+        'file_size_avis': source_data['file_size_avis'],
+        'file_size_dce': source_data['file_size_dce'],
+        'embedded_filenames_reglement': source_data['embedded_filenames_reglement'],
+        'embedded_filenames_complement': source_data['embedded_filenames_complement'],
+        'embedded_filenames_avis': source_data['embedded_filenames_avis'],
+        'embedded_filenames_dce': source_data['embedded_filenames_dce'],
+        'content': content
+    }
 
     es_client = Elasticsearch([CONFIG_ELASTICSEARCH['elasticsearch_server_url']])  # Is it a good thing to create one client per doc?
     es_client.create(
