@@ -18,6 +18,9 @@ if __name__ == '__main__':
     filename = 'metadata-{}.json'.format(datetime.datetime.now().isoformat().split('T')[0])
     file_path = pathlib.Path(CONFIG_METADATA_BACKUP['repository']) / filename
 
+    with file_path.open('r') as f:
+        f.write(data_json)
+
     s3_resource = boto3.session.Session(
         aws_access_key_id=CONFIG_METADATA_BACKUP['aws_access_key_id'],
         aws_secret_access_key=CONFIG_METADATA_BACKUP['aws_secret_access_key'],
@@ -25,7 +28,7 @@ if __name__ == '__main__':
     ).resource('s3')
 
     s3_resource.meta.client.upload_file(
-        Filename=file_path,
+        Filename=file_path.as_posix(),
         Bucket=CONFIG_METADATA_BACKUP['bucket_name'],
         Key=filename,
         ExtraArgs={},
