@@ -7,7 +7,7 @@ env=production
 
 public_directory=/home/michel/scraper-place/data/public
 
-[backups_metadata]
+[metadata_backup]
 
 repository=/home/michel/projects/scraper-place/data/backups
 region_name=xxx

@@ -6,7 +6,7 @@ from bson import json_util
 import boto3
 from pymongo import MongoClient
 
-from scraper_place.config import CONFIG_METADATA_BACKUPS
+from scraper_place.config import CONFIG_METADATA_BACKUP
 
 
 if __name__ == '__main__':
@@ -16,17 +16,17 @@ if __name__ == '__main__':
     data_json = json_util.dumps(data)
 
     filename = 'metadata-{}.json'.format(datetime.datetime.now().isoformat().split('T')[0])
-    file_path = pathlib.Path(CONFIG_METADATA_BACKUPS['repository']) / filename
+    file_path = pathlib.Path(CONFIG_METADATA_BACKUP['repository']) / filename
 
     s3_resource = boto3.session.Session(
-        aws_access_key_id=CONFIG_METADATA_BACKUPS['aws_access_key_id'],
-        aws_secret_access_key=CONFIG_METADATA_BACKUPS['aws_secret_access_key'],
-        region_name=CONFIG_METADATA_BACKUPS['region_name'],
+        aws_access_key_id=CONFIG_METADATA_BACKUP['aws_access_key_id'],
+        aws_secret_access_key=CONFIG_METADATA_BACKUP['aws_secret_access_key'],
+        region_name=CONFIG_METADATA_BACKUP['region_name'],
     ).resource('s3')
 
     s3_resource.meta.client.upload_file(
         Filename=file_path,
-        Bucket=CONFIG_METADATA_BACKUPS['bucket_name'],
+        Bucket=CONFIG_METADATA_BACKUP['bucket_name'],
         Key=filename,
         ExtraArgs={},
     )
