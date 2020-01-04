@@ -17,17 +17,12 @@ import boto3
 import paramiko
 from elasticsearch import Elasticsearch
 
-from scraper_place.config import CONFIG_ELASTICSEARCH, CONFIG_AWS_EC2, CONFIG_ENV, STATE_GLACIER_OK, STATE_CONTENT_INDEXATION_OK, STATE_CONTENT_INDEXATION_KO, build_internal_filepath
+from scraper_place.config import CONFIG_ELASTICSEARCH, CONFIG_AWS_EC2, CONFIG_ENV, STATE_GLACIER_OK, STATE_CONTENT_INDEXATION_OK, STATE_CONTENT_INDEXATION_KO, STATE_INDEXING, build_internal_filepath
 
 
 def index():
     """index(): Extract content from all DCE and index it in ElasticSearch.
     """
-
-    client = MongoClient()
-    collection = client.place.dce
-
-    cursor = collection.find({'state': STATE_GLACIER_OK})
 
     ec2_client = boto3.client(
         'ec2',
@@ -42,8 +37,23 @@ def index():
         install_on_ec2(ssh_client)
         tika_server_url = 'http://{}:9998/'.format(ec2_ipv4)
 
-        for dce_data in cursor:
-            index_dce(dce_data=dce_data, tika_server_url=tika_server_url, collection=collection)
+        while True:
+            client = MongoClient()
+            collection = client.place.dce
+            dce_list = list(collection.find({'state': STATE_GLACIER_OK}).limit(1))
+
+            if not dce_list:
+                client.close()
+                break
+
+            dce_data = dce_list[0]
+            collection.update_one(
+                {'annonce_id': dce_data['annonce_id']},
+                {'$set': {'state': STATE_INDEXING}}
+            )
+            client.close()
+
+            index_dce(dce_data=dce_data, tika_server_url=tika_server_url)
 
     except Exception as exception:
         print("Error: exception occured, terminating ({}: {})".format(type(exception).__name__, exception))
@@ -51,21 +61,19 @@ def index():
 
     terminate_ec2(ec2_client=ec2_client, instance_id=instance_id, ssh_client=ssh_client)
 
-    client.close()
 
-
-def index_dce(dce_data, tika_server_url, collection):
+def index_dce(dce_data, tika_server_url):
     """index_dce(): Extract the content of one DCE and give it to ElasticSearch
     """
 
-    annonce_id = dce_data['annonce_id']
-
-    content_list = []
-
-    file_types = ['reglement', 'complement', 'avis', 'dce']
-    filenames = [dce_data['filename_reglement'], dce_data['filename_complement'], dce_data['filename_avis'], dce_data['filename_dce']]
-
     try:
+        annonce_id = dce_data['annonce_id']
+
+        content_list = []
+
+        file_types = ['reglement', 'complement', 'avis', 'dce']
+        filenames = [dce_data['filename_reglement'], dce_data['filename_complement'], dce_data['filename_avis'], dce_data['filename_dce']]
+
         for file_type, filename in zip(file_types, filenames):
             if not filename:
                 continue
@@ -76,35 +84,42 @@ def index_dce(dce_data, tika_server_url, collection):
 
             content, embedded_resource_paths = extract_file(file_path=internal_filepath, tika_server_url=tika_server_url)
 
+            client = MongoClient()
+            collection = client.place.dce
             collection.update_one(
                 {'annonce_id': annonce_id},
                 {'$set': {'embedded_filenames_{}'.format(file_type): embedded_resource_paths}}
             )
+            client.close()
 
             content_list.append(content)
 
         content = '\n'.join(content_list)
 
+        feed_elastisearch(annonce_id=annonce_id, content=content, collection=collection)
+
+        client = MongoClient()
+        collection = client.place.dce
+        collection.update_one(
+            {'annonce_id': annonce_id},
+            {'$set': {'state': STATE_CONTENT_INDEXATION_OK}}
+        )
+        client.close()
+
+        if CONFIG_ENV['env'] != 'production':
+            print('Debug: Extracted content from {}'.format(annonce_id))
+
     except Exception as exception:
         print("Warning: exception occured, aborting DCE ({}: {}) on {}".format(type(exception).__name__, exception, annonce_id))
         traceback.print_exc()
 
+        client = MongoClient()
+        collection = client.place.dce
         collection.update_one(
             {'annonce_id': annonce_id},
             {'$set': {'state': STATE_CONTENT_INDEXATION_KO}}
         )
-
-        return
-
-    feed_elastisearch(annonce_id=annonce_id, content=content, collection=collection)
-
-    collection.update_one(
-        {'annonce_id': annonce_id},
-        {'$set': {'state': STATE_CONTENT_INDEXATION_OK}}
-    )
-
-    if CONFIG_ENV['env'] != 'production':
-        print('Debug: Extracted content from {}'.format(annonce_id))
+        client.close()
 
 
 def feed_elastisearch(annonce_id, content, collection):
@@ -133,7 +148,7 @@ def feed_elastisearch(annonce_id, content, collection):
         'content': content
     }
 
-    es_client = Elasticsearch([CONFIG_ELASTICSEARCH['elasticsearch_server_url']])  # Is it a good thing to create one client per doc?
+    es_client = Elasticsearch([CONFIG_ELASTICSEARCH['elasticsearch_server_url']])
     es_client.create(
         index=CONFIG_ELASTICSEARCH['index_name'],
         id='{}'.format(annonce_id),

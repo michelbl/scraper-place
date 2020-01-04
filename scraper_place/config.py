@@ -27,6 +27,7 @@ STATE_GLACIER_OK = 'glacier_ok'
 STATE_GLACIER_KO = 'glacier_ko'
 STATE_CONTENT_INDEXATION_OK = 'content_indexing_ok'
 STATE_CONTENT_INDEXATION_KO = 'content_indexing_ko'
+STATE_INDEXING = 'indexing'
 
 
 def build_internal_filepath(annonce_id, original_filename, file_type):
