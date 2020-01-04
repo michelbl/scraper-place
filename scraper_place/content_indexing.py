@@ -96,7 +96,7 @@ def index_dce(dce_data, tika_server_url):
 
         content = '\n'.join(content_list)
 
-        feed_elastisearch(annonce_id=annonce_id, content=content, collection=collection)
+        feed_elastisearch(dce_data=dce_data, content=content)
 
         client = MongoClient()
         collection = client.place.dce
@@ -122,37 +122,37 @@ def index_dce(dce_data, tika_server_url):
         client.close()
 
 
-def feed_elastisearch(annonce_id, content, collection):
-    source_data = collection.find_one({'annonce_id': annonce_id})
+def feed_elastisearch(dce_data, content):
     data = {
-        'annonce_id': source_data['annonce_id'],
-        'org_acronym': source_data['org_acronym'],
-        'links_boamp': source_data['links_boamp'],
-        'reference': source_data['reference'],
-        'intitule': source_data['intitule'],
-        'objet': source_data['objet'],
-        'reglement_ref': source_data['reglement_ref'],
-        'filename_reglement': source_data['filename_reglement'],
-        'filename_complement': source_data['filename_complement'],
-        'filename_avis': source_data['filename_avis'],
-        'filename_dce': source_data['filename_dce'],
-        'fetch_datetime': source_data['fetch_datetime'],
-        'file_size_reglement': source_data['file_size_reglement'],
-        'file_size_complement': source_data['file_size_complement'],
-        'file_size_avis': source_data['file_size_avis'],
-        'file_size_dce': source_data['file_size_dce'],
-        'embedded_filenames_reglement': source_data['embedded_filenames_reglement'],
-        'embedded_filenames_complement': source_data['embedded_filenames_complement'],
-        'embedded_filenames_avis': source_data['embedded_filenames_avis'],
-        'embedded_filenames_dce': source_data['embedded_filenames_dce'],
+        'annonce_id': dce_data['annonce_id'],
+        'org_acronym': dce_data['org_acronym'],
+        'links_boamp': dce_data['links_boamp'],
+        'reference': dce_data['reference'],
+        'intitule': dce_data['intitule'],
+        'objet': dce_data['objet'],
+        'reglement_ref': dce_data['reglement_ref'],
+        'filename_reglement': dce_data['filename_reglement'],
+        'filename_complement': dce_data['filename_complement'],
+        'filename_avis': dce_data['filename_avis'],
+        'filename_dce': dce_data['filename_dce'],
+        'fetch_datetime': dce_data['fetch_datetime'],
+        'file_size_reglement': dce_data['file_size_reglement'],
+        'file_size_complement': dce_data['file_size_complement'],
+        'file_size_avis': dce_data['file_size_avis'],
+        'file_size_dce': dce_data['file_size_dce'],
+        'embedded_filenames_reglement': dce_data['embedded_filenames_reglement'],
+        'embedded_filenames_complement': dce_data['embedded_filenames_complement'],
+        'embedded_filenames_avis': dce_data['embedded_filenames_avis'],
+        'embedded_filenames_dce': dce_data['embedded_filenames_dce'],
         'content': content
     }
 
     es_client = Elasticsearch([CONFIG_ELASTICSEARCH['elasticsearch_server_url']])
     es_client.create(
         index=CONFIG_ELASTICSEARCH['index_name'],
-        id='{}'.format(annonce_id),
-        body=data
+        id='{}'.format(dce_data['annonce_id']),
+        body=data,
+        timeout=60,
     )
 
 
