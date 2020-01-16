@@ -153,6 +153,7 @@ def feed_elastisearch(dce_data, content):
         id='{}'.format(dce_data['annonce_id']),
         body=data,
         timeout='60s',
+        request_timeout=60,
     )
 
 
