@@ -140,10 +140,10 @@ def feed_elastisearch(dce_data, content):
         'file_size_complement': dce_data['file_size_complement'],
         'file_size_avis': dce_data['file_size_avis'],
         'file_size_dce': dce_data['file_size_dce'],
-        'embedded_filenames_reglement': dce_data['embedded_filenames_reglement'],
-        'embedded_filenames_complement': dce_data['embedded_filenames_complement'],
-        'embedded_filenames_avis': dce_data['embedded_filenames_avis'],
-        'embedded_filenames_dce': dce_data['embedded_filenames_dce'],
+        'embedded_filenames_reglement': dce_data.get('embedded_filenames_reglement'),
+        'embedded_filenames_complement': dce_data.get('embedded_filenames_complement'),
+        'embedded_filenames_avis': dce_data.get('embedded_filenames_avis'),
+        'embedded_filenames_dce': dce_data.get('embedded_filenames_dce'),
         'content': content
     }
 
