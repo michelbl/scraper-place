@@ -334,9 +334,12 @@ def next_page(page_state, cookie):
 
     assert response.status_code == 200
     links = extract_links(response, LINK_REGEX)
-    page_state = re.search(PAGE_STATE_REGEX, response.text).groups()[0]
+    page_state_new = re.search(PAGE_STATE_REGEX, response.text).groups()[0]
 
-    return links, page_state, cookie
+    if page_state == page_state_new:
+        raise NoMoreResultsException()
+
+    return links, page_state_new, cookie
 
 
 
