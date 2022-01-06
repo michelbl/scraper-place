@@ -21,7 +21,7 @@ from scraper_place.config import CONFIG_ENV, STATE_FETCH_OK, build_internal_file
 URL_SEARCH = 'https://www.marches-publics.gouv.fr/?page=entreprise.EntrepriseAdvancedSearch&AllCons'
 
 PAGE_STATE_REGEX = 'name="PRADO_PAGESTATE" id="PRADO_PAGESTATE" value="([a-zA-Z0-9/+=]+)"'
-LINK_REGEX = r'^https://www\.marches-publics\.gouv\.fr/app\.php/consultation/([\d]+)\?orgAcronyme=([\da-z]+)$'
+LINK_REGEX = r'^https://www\.marches-publics\.gouv\.fr/app\.php/entreprise/consultation/([\d]+)\?orgAcronyme=([\da-z]+)$'
 REGLEMENT_REGEX = r'^/index.php\?page=entreprise\.EntrepriseDownloadReglement&reference=([a-zA-Z\d]+)&orgAcronyme=([\da-z]+)$'
 BOAMP_REGEX = r'^http://www\.boamp\.fr/(?:index\.php/)?avis/detail/([\d-]+)(?:/[\d]+)?$'
 
