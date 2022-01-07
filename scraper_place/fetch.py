@@ -87,7 +87,7 @@ def fetch_current_annonces(nb_pages=0):
     try:
         counter = 0
         while (nb_pages == 0) or (counter < nb_pages):
-            links, page_state, cookie = next_page(page_state, cookie)
+            links, page_state, cookie = next_page(page_state, cookie, links)
             links_by_page.append(links)
             counter += 1
 
@@ -322,7 +322,7 @@ def init():
 class NoMoreResultsException(Exception):
     pass
 
-def next_page(page_state, cookie):
+def next_page(page_state, cookie, previous_links):
     if not page_state:
         return init()
 
@@ -345,6 +345,9 @@ def next_page(page_state, cookie):
     page_state_new = re.search(PAGE_STATE_REGEX, response.text).groups()[0]
 
     if page_state == page_state_new:
+        raise NoMoreResultsException()
+    
+    if previous_links == links:
         raise NoMoreResultsException()
 
     return links, page_state_new, cookie
