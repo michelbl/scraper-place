@@ -18,11 +18,11 @@ from pymongo import MongoClient
 from scraper_place.config import CONFIG_ENV, STATE_FETCH_OK, build_internal_filepath
 
 
-URL_SEARCH = 'https://www.marches-publics.gouv.fr/?page=entreprise.EntrepriseAdvancedSearch&AllCons'
+URL_SEARCH = 'https://www.marches-publics.gouv.fr/?page=Entreprise.EntrepriseAdvancedSearch&AllCons'
 
 PAGE_STATE_REGEX = 'name="PRADO_PAGESTATE" id="PRADO_PAGESTATE" value="([a-zA-Z0-9/+=]+)"'
 LINK_REGEX = r'^https://www\.marches-publics\.gouv\.fr/app\.php/entreprise/consultation/([\d]+)\?orgAcronyme=([\da-z]+)$'
-REGLEMENT_REGEX = r'^/index.php\?page=entreprise\.EntrepriseDownloadReglement&reference=([a-zA-Z\d]+)&orgAcronyme=([\da-z]+)$'
+REGLEMENT_REGEX = r'^/index.php\?page=Entreprise\.EntrepriseDownloadReglement&reference=([a-zA-Z\d=]+)&orgAcronyme=([\da-z]+)$'
 BOAMP_REGEX = r'^http://www\.boamp\.fr/(?:index\.php/)?avis/detail/([\d-]+)(?:/[\d]+)?$'
 
 
@@ -110,11 +110,9 @@ def fetch_data(link_annonce):
     """
 
     annonce_id, org_acronym = re.match(LINK_REGEX, link_annonce).groups()
-    url_annonce = 'https://www.marches-publics.gouv.fr/index.php?page=entreprise.EntrepriseDetailsConsultation&refConsultation={}&orgAcronyme={}'.format(annonce_id, org_acronym)
 
-    response = requests.get(url_annonce)
+    response = requests.get(link_annonce, allow_redirects=False)
     assert response.status_code == 200
-    page_state = re.search(PAGE_STATE_REGEX, response.text).groups()[0]
 
 
     # Get text data
@@ -128,13 +126,13 @@ def fetch_data(link_annonce):
     recap_data = soup.find_all(class_="col-md-10 text-justify")
 
     assert recap_data[0].find('label').text.strip() == "Référence :"
-    reference = recap_data[0].find('div').text.strip()
+    reference = recap_data[0].find('div').find('div').text.strip()
 
     assert recap_data[1].find('label').text.strip() == "Intitulé :"
-    intitule = recap_data[1].find('div').text.strip()
+    intitule = recap_data[1].find('div').find('div').text.strip()
 
     assert recap_data[2].find('label').text.strip() == "Objet :"
-    objet = recap_data[2].find('div').text.strip()
+    objet = recap_data[2].find('div').find('div').text.strip()
 
 
     # Get links to files
@@ -244,7 +242,7 @@ def fetch_data(link_annonce):
     file_size_dce = None
     if link_dce:
         url_dce = 'https://www.marches-publics.gouv.fr/index.php?page=entreprise.EntrepriseDemandeTelechargementDce&refConsultation={}&orgAcronyme={}'.format(annonce_id, org_acronym)
-        response_dce = requests.get(url_dce)
+        response_dce = requests.get(url_dce, allow_redirects=False)
         assert response_dce.status_code == 200
         page_state = re.search(PAGE_STATE_REGEX, response_dce.text).groups()[0]
         cookie = response_dce.headers['Set-Cookie']
@@ -254,7 +252,7 @@ def fetch_data(link_annonce):
             'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$validateButton',
             'ctl0$CONTENU_PAGE$EntrepriseFormulaireDemande$RadioGroup': 'ctl0$CONTENU_PAGE$EntrepriseFormulaireDemande$choixAnonyme',
         }
-        response_dce2 = requests.post(url_dce, headers={'Cookie': cookie}, data=data)
+        response_dce2 = requests.post(url_dce, headers={'Cookie': cookie}, data=data, allow_redirects=False)
         assert response_dce2.status_code == 200
         page_state = re.search(PAGE_STATE_REGEX, response_dce2.text).groups()[0]
 
@@ -298,7 +296,7 @@ def init():
     """
 
     # get page state
-    response = requests.get(URL_SEARCH)
+    response = requests.get(URL_SEARCH, allow_redirects=False)
     assert response.status_code == 200, response.status_code
     page_state = re.search(PAGE_STATE_REGEX, response.text).groups()[0]
     cookie = response.headers['Set-Cookie']
@@ -309,7 +307,12 @@ def init():
         'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$resultSearch$listePageSizeTop',
         'ctl0$CONTENU_PAGE$resultSearch$listePageSizeTop': 20,
     }
-    response = requests.post(URL_SEARCH, headers={'Cookie': cookie}, data=data)
+    response = requests.post(
+        URL_SEARCH,
+        headers={'Cookie': cookie},
+        data=data,
+        allow_redirects=False,
+    )
     assert response.status_code == 200, response.status_code
     links = extract_links(response, LINK_REGEX)
     page_state = re.search(PAGE_STATE_REGEX, response.text).groups()[0]
@@ -327,7 +330,12 @@ def next_page(page_state, cookie):
         'PRADO_PAGESTATE': page_state,
         'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$resultSearch$PagerTop$ctl2',
     }
-    response = requests.post(URL_SEARCH, headers={'Cookie': cookie}, data=data)
+    response = requests.post(
+        URL_SEARCH,
+        headers={'Cookie': cookie},
+        data=data,
+        allow_redirects=False,
+    )
 
     if response.status_code == 500:
         raise NoMoreResultsException()
