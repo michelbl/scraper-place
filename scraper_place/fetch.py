@@ -22,7 +22,7 @@ URL_SEARCH = 'https://www.marches-publics.gouv.fr/?page=Entreprise.EntrepriseAdv
 
 PAGE_STATE_REGEX = 'name="PRADO_PAGESTATE" id="PRADO_PAGESTATE" value="([a-zA-Z0-9/+=]+)"'
 LINK_REGEX = r'^https://www\.marches-publics\.gouv\.fr/app\.php/entreprise/consultation/([\d]+)\?orgAcronyme=([\da-z]+)$'
-REGLEMENT_REGEX = r'^/index.php\?page=Entreprise\.EntrepriseDownloadReglement&reference=([a-zA-Z\d=]+)&orgAcronyme=([\da-z]+)$'
+REGLEMENT_REGEX = r'^/index.php\?page=Entreprise\.EntrepriseDownloadReglement&id=([a-zA-Z\d=]+)&orgAcronyme=([\da-z]+)$'
 BOAMP_REGEX = r'^http://www\.boamp\.fr/(?:index\.php/)?avis/detail/([\d-]+)(?:/[\d]+)?$'
 
 
@@ -242,7 +242,7 @@ def fetch_data(link_annonce):
     filename_dce = None
     file_size_dce = None
     if link_dce:
-        url_dce = 'https://www.marches-publics.gouv.fr/index.php?page=entreprise.EntrepriseDemandeTelechargementDce&refConsultation={}&orgAcronyme={}'.format(annonce_id, org_acronym)
+        url_dce = 'https://www.marches-publics.gouv.fr/index.php?page=Entreprise.EntrepriseDemandeTelechargementDce&id={}&orgAcronyme={}'.format(annonce_id, org_acronym)
         response_dce = requests.get(url_dce, allow_redirects=False)
         assert response_dce.status_code == 200
         page_state = re.search(PAGE_STATE_REGEX, response_dce.text).groups()[0]
