@@ -201,7 +201,7 @@ def fetch_data(link_annonce):
     if link_avis:
         response_avis = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_avis), stream=True)
         assert response_avis.status_code == 200
-        regex_attachment = r'^attachment; filename="([^"]+)"'
+        regex_attachment = r'^attachment; filename=([^;]+);'
         filename_avis = re.match(regex_attachment, response_avis.headers['Content-Disposition']).groups()[0]
 
         file_size_avis = write_response_to_file(annonce_id=annonce_id, filename=filename_avis, file_type='avis', response=response_avis)
