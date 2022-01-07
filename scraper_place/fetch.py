@@ -84,11 +84,12 @@ def fetch_current_annonces(nb_pages=0):
     links_by_page = []
     page_state = None
     cookie = None
+    current_page_links = None
     try:
         counter = 0
         while (nb_pages == 0) or (counter < nb_pages):
-            links, page_state, cookie = next_page(page_state, cookie, links)
-            links_by_page.append(links)
+            current_page_links, page_state, cookie = next_page(page_state, cookie, current_page_links)
+            links_by_page.append(current_page_links)
             counter += 1
 
     except NoMoreResultsException:
