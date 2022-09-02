@@ -17,50 +17,30 @@ import boto3
 import paramiko
 from elasticsearch import Elasticsearch
 
-from scraper_place.config import CONFIG_ELASTICSEARCH, CONFIG_AWS_EC2, CONFIG_ENV, STATE_GLACIER_OK, STATE_CONTENT_INDEXATION_OK, STATE_CONTENT_INDEXATION_KO, STATE_INDEXING, build_internal_filepath
+from scraper_place.config import CONFIG_ELASTICSEARCH, CONFIG_TIKA, CONFIG_ENV, STATE_GLACIER_OK, STATE_CONTENT_INDEXATION_OK, STATE_CONTENT_INDEXATION_KO, STATE_INDEXING, build_internal_filepath
 
 
 def index():
     """index(): Extract content from all DCE and index it in ElasticSearch.
     """
 
-    ec2_client = boto3.client(
-        'ec2',
-        aws_access_key_id=CONFIG_AWS_EC2['aws_access_key_id'],
-        aws_secret_access_key=CONFIG_AWS_EC2['aws_secret_access_key'],
-        region_name=CONFIG_AWS_EC2['region_name'],
-    )
-    instance_id = launch_ec2(ec2_client)
-    ec2_ipv4, ssh_client = init_ec2(ec2_client, instance_id)
+    while True:
+        client = MongoClient()
+        collection = client.place.dce
+        dce_list = list(collection.find({'state': STATE_GLACIER_OK}).limit(1))
 
-    try:
-        install_on_ec2(ssh_client)
-        tika_server_url = 'http://{}:9998/'.format(ec2_ipv4)
-
-        while True:
-            client = MongoClient()
-            collection = client.place.dce
-            dce_list = list(collection.find({'state': STATE_GLACIER_OK}).limit(1))
-
-            if not dce_list:
-                client.close()
-                break
-
-            dce_data = dce_list[0]
-            collection.update_one(
-                {'annonce_id': dce_data['annonce_id']},
-                {'$set': {'state': STATE_INDEXING}}
-            )
+        if not dce_list:
             client.close()
+            break
 
-            index_dce(dce_data=dce_data, tika_server_url=tika_server_url)
+        dce_data = dce_list[0]
+        collection.update_one(
+            {'annonce_id': dce_data['annonce_id']},
+            {'$set': {'state': STATE_INDEXING}}
+        )
+        client.close()
 
-    except Exception as exception:
-        print("Error: exception occured, terminating ({}: {})".format(type(exception).__name__, exception))
-        traceback.print_exc()
-
-    terminate_ec2(ec2_client=ec2_client, instance_id=instance_id, ssh_client=ssh_client)
-
+        index_dce(dce_data=dce_data, tika_server_url=CONFIG_TIKA['tika_server_url'])
 
 def index_dce(dce_data, tika_server_url):
     """index_dce(): Extract the content of one DCE and give it to ElasticSearch
@@ -214,90 +194,3 @@ def is_unwanted_type(filename):
     }:
         return False
     return True
-
-
-def launch_ec2(ec2_client):
-    print('Info: Launching EC2 instance...')
-
-    response = ec2_client.run_instances(
-        BlockDeviceMappings=[
-            {
-                'DeviceName': '/dev/xvda',
-                'Ebs': {
-                    'DeleteOnTermination': True,
-                    'VolumeSize': 8,
-                    'VolumeType': 'gp2',
-                },
-            },
-        ],
-        ImageId='ami-5ce55321',
-        InstanceType='t2.large',
-        KeyName=CONFIG_AWS_EC2['key_name'],
-        MaxCount=1,
-        MinCount=1,
-        SecurityGroupIds=[CONFIG_AWS_EC2['security_group']],
-        #DryRun=True,
-    )
-
-    instance_id = response['Instances'][0]['InstanceId']
-
-    return instance_id
-
-
-def init_ec2(ec2_client, instance_id):
-    waiter = ec2_client.get_waiter('instance_status_ok')
-    waiter.wait(
-        InstanceIds=[instance_id]
-    )
-
-    response = ec2_client.describe_instances(
-        InstanceIds=[instance_id]
-    )
-    ec2_ipv4 = response['Reservations'][0]['Instances'][0]['PublicIpAddress']
-
-    print('Info: Successfully launched instance {} with IPv4 {}'.format(instance_id, ec2_ipv4))
-
-    ssh_client = paramiko.SSHClient()
-    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh_key = paramiko.RSAKey.from_private_key_file(CONFIG_AWS_EC2['private_key'])
-    ssh_client.connect(
-        hostname=ec2_ipv4,
-        username="ec2-user",
-        pkey=ssh_key
-    )
-
-    return ec2_ipv4, ssh_client
-
-
-def install_on_ec2(ssh_client):
-    ssh_channel = ssh_client.get_transport().open_session()
-    ssh_channel.exec_command('wget https://archive.apache.org/dist/tika/tika-server-1.21.jar')
-    assert ssh_channel.recv_exit_status() == 0
-
-    ssh_channel = ssh_client.get_transport().open_session()
-    ssh_channel.exec_command('sudo yum -y install java')
-    assert ssh_channel.recv_exit_status() == 0
-
-    ssh_channel = ssh_client.get_transport().open_session()
-    ssh_channel.exec_command('java -Xmx7000m -jar tika-server-1.21.jar --host=* >tika-server.log 2>&1')
-
-    time.sleep(10)  # give some time to Tika to start
-
-    print('Info: Launched Tika server')
-
-
-def terminate_ec2(ec2_client, instance_id, ssh_client):
-    try:
-        sftp_client = ssh_client.open_sftp()
-        sftp_client.get('tika-server.log', os.path.join(CONFIG_AWS_EC2['logs_directory'], 'tika-server.log'))
-        sftp_client.close()
-    except Exception as e:
-        print('Warning: Failed to download tika log')
-
-    ssh_client.close()
-
-    ec2_client.terminate_instances(
-        InstanceIds=[instance_id],
-    )
-
-    print('Info: Terminated EC2 instance')
