@@ -20,9 +20,9 @@ Curiously, a small fraction of the DCE appear in several pages, and this is not 
 
 ### Prerequisites
 
-* Install `mongodb`>=4.2 (may work on prior versions).
+* Install mongodb 6 (other versions may work).
 * If you plan to replicate the files on AWS Glacier, create a vault and create a IAM user with upload permission.
-* If you plan to index the data with ElasticSearch, install it. Make sure a tika server 1.17 (older versions may work) is reachable with the options `-enableUnsecureFeatures` and `-enableFileUrl`.
+* If you plan to index the data with ElasticSearch, install it. Install a tika server 2.4.1 (other versions may work).
 * If you plan to run the Tika server on an AWS EC2 instance, configure it accordingly (give permissions RunInstances, TerminateInstances, DescribeInstances, DescribeInstanceStatus, add a key pair, allow SSH inbound traffic).
 * Create a python virtual env with python>=3.6 (I suggest using `pew`).
 
