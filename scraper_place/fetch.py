@@ -37,9 +37,11 @@ def fetch_new_dce():
         nb_pages = 1
 
     links = fetch_current_annonces(nb_pages=nb_pages)
+    print("{} links".format(len(links)))
 
     nb_processed = 0
     for link in links:
+        print(link)
         nb_processed += process_link(link)
     print("Info: Processed {} DCE".format(nb_processed))
 
@@ -90,6 +92,7 @@ def fetch_current_annonces(nb_pages=0):
         while (nb_pages == 0) or (counter < nb_pages):
             current_page_links, page_state, cookie = next_page(page_state, cookie, current_page_links)
             links_by_page.append(current_page_links)
+            print("Appended {} links".format(len(current_page_links)))
             counter += 1
 
     except NoMoreResultsException:
