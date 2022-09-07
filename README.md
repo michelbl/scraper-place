@@ -16,7 +16,7 @@ PLACE uses the PHP framework PRADO. It stores the current navigation state in th
 Curiously, a small fraction of the DCE appear in several pages, and this is not related to the addition of documents during the course of the parsing. I guess such a feature would be very difficult to implement purposefully.
 
 
-## Install `scaper-place`
+## Install `scraper-place`
 
 ### Prerequisites
 

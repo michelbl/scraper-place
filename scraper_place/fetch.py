@@ -115,7 +115,7 @@ def fetch_data(link_annonce):
 
     annonce_id, org_acronym = re.match(LINK_REGEX, link_annonce).groups()
 
-    response = requests.get(link_annonce, allow_redirects=False)
+    response = requests.get(link_annonce, allow_redirects=False, timeout=600)
     assert response.status_code == 200
 
 
@@ -202,7 +202,7 @@ def fetch_data(link_annonce):
     filename_avis = None
     file_size_avis = None
     if link_avis:
-        response_avis = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_avis), stream=True)
+        response_avis = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_avis), stream=True, timeout=600)
         assert response_avis.status_code == 200
         regex_attachment = r'^attachment; filename=([^;]+);'
         filename_avis = re.match(regex_attachment, response_avis.headers['Content-Disposition']).groups()[0]
@@ -217,7 +217,7 @@ def fetch_data(link_annonce):
     file_size_reglement = None
     if link_reglement:
         reglement_ref = re.match(REGLEMENT_REGEX, link_reglement).groups()[0]
-        response_reglement = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_reglement), stream=True)
+        response_reglement = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_reglement), stream=True, timeout=600)
         assert response_reglement.status_code == 200
         content_type = response_reglement.headers['Content-Type']
         assert content_type in {'application/octet-stream', 'application/zip'}, content_type
@@ -232,7 +232,7 @@ def fetch_data(link_annonce):
     filename_complement = None
     file_size_complement = None
     if link_complement:
-        response_complement = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_complement), stream=True)
+        response_complement = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_complement), stream=True, timeout=600)
         assert response_complement.status_code == 200
         regex_attachment = r'^attachment; filename="([^"]+)"'
         filename_complement = re.match(regex_attachment, response_complement.headers['Content-Disposition']).groups()[0]
@@ -246,7 +246,7 @@ def fetch_data(link_annonce):
     file_size_dce = None
     if link_dce:
         url_dce = 'https://www.marches-publics.gouv.fr/index.php?page=Entreprise.EntrepriseDemandeTelechargementDce&id={}&orgAcronyme={}'.format(annonce_id, org_acronym)
-        response_dce = requests.get(url_dce, allow_redirects=False)
+        response_dce = requests.get(url_dce, allow_redirects=False, timeout=600)
         assert response_dce.status_code == 200
         page_state = re.search(PAGE_STATE_REGEX, response_dce.text).groups()[0]
         cookie = response_dce.headers['Set-Cookie']
@@ -256,7 +256,7 @@ def fetch_data(link_annonce):
             'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$validateButton',
             'ctl0$CONTENU_PAGE$EntrepriseFormulaireDemande$RadioGroup': 'ctl0$CONTENU_PAGE$EntrepriseFormulaireDemande$choixAnonyme',
         }
-        response_dce2 = requests.post(url_dce, headers={'Cookie': cookie}, data=data, allow_redirects=False)
+        response_dce2 = requests.post(url_dce, headers={'Cookie': cookie}, data=data, allow_redirects=False, timeout=600)
         assert response_dce2.status_code == 200
         page_state = re.search(PAGE_STATE_REGEX, response_dce2.text).groups()[0]
 
@@ -264,7 +264,7 @@ def fetch_data(link_annonce):
             'PRADO_PAGESTATE': page_state,
             'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$EntrepriseDownloadDce$completeDownload',
         }
-        response_dce3 = requests.post(url_dce, headers={'Cookie': cookie}, data=data, stream=True)
+        response_dce3 = requests.post(url_dce, headers={'Cookie': cookie}, data=data, stream=True, timeout=600)
         assert response_dce3.status_code == 200
 
         content_type = response_dce3.headers['Content-Type']
@@ -300,7 +300,7 @@ def init():
     """
 
     # get page state
-    response = requests.get(URL_SEARCH, allow_redirects=False)
+    response = requests.get(URL_SEARCH, allow_redirects=False, timeout=600)
     assert response.status_code == 200, response.status_code
     page_state = re.search(PAGE_STATE_REGEX, response.text).groups()[0]
     cookie = response.headers['Set-Cookie']
@@ -316,6 +316,7 @@ def init():
         headers={'Cookie': cookie},
         data=data,
         allow_redirects=False,
+        timeout=600,
     )
     assert response.status_code == 200, response.status_code
     links = extract_links(response, LINK_REGEX)
@@ -339,6 +340,7 @@ def next_page(page_state, cookie, previous_links):
         headers={'Cookie': cookie},
         data=data,
         allow_redirects=False,
+        timeout=600,
     )
 
     if response.status_code == 500:
