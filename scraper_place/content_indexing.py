@@ -14,7 +14,6 @@ import traceback
 from pymongo import MongoClient
 import requests
 import boto3
-import paramiko
 from elasticsearch import Elasticsearch
 
 from scraper_place.config import CONFIG_ELASTICSEARCH, CONFIG_TIKA, CONFIG_ENV, STATE_GLACIER_OK, STATE_CONTENT_INDEXATION_OK, STATE_CONTENT_INDEXATION_KO, STATE_INDEXING, build_internal_filepath
