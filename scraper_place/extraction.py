@@ -5,6 +5,7 @@ import json
 import os
 import urllib
 import traceback
+import time
 
 from pymongo import MongoClient
 import requests
@@ -40,6 +41,7 @@ def extract_dce(dce_data, tika_server_url):
 
     try:
         annonce_id = dce_data['annonce_id']
+        print('{} extracting content for DCE {}'.format(time.ctime(), annonce_id))
 
         content_list = []
 
