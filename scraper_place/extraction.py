@@ -95,6 +95,7 @@ def extract_dce(dce_data, tika_server_url):
             {'$set': {'state': STATE_CONTENT_EXTRACTION_KO}}
         )
         client.close()
+        time.sleep(5)  # Give some time to the Tika server to restart
 
 def extract_file(file_path, tika_server_url):
     url = urllib.parse.urljoin(tika_server_url, '/rmeta/text')
