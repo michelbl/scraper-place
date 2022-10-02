@@ -40,16 +40,18 @@ Curiously, a small fraction of the DCE appear in several pages, and this is not 
 ## Usage
 
 ```
-from scraper_place import fetch, glacier, content_indexing
+from scraper_place import fetch, glacier, extraction, indexation
 
 fetch.fetch_new_dce()
 glacier.save()
-content_indexing.index()
+extraction.extract()
+indexation.index()
 ```
 
 * `fetch.fetch_new_dce()` parses https://www.marches-publics.gouv.fr/ and fetches new DCEs.
 * `glacier.save()` sends a copy to AWS Glacier
-* `content_indexing.index()` extracts content with Apache Tika and feeds it to ElasticSearch
+* `extraction.extract()` extracts content with Apache Tika
+* `indexation.index()` feeds content to ElasticSearch
 
 ## Misc
 

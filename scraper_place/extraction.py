@@ -1,26 +1,19 @@
-"""content_indexing: Extract content using Apache Tika and ElasticSearch
-
-Automatically spawns an EC2 instance and start a Tika server.
-
-Make sure an ElasticSearch server is running.
+"""extraction: Extract content using Apache Tika
 """
 
 import json
 import os
 import urllib
-import time
 import traceback
 
 from pymongo import MongoClient
 import requests
-import boto3
-from elasticsearch import Elasticsearch
 
-from scraper_place.config import CONFIG_ELASTICSEARCH, CONFIG_TIKA, CONFIG_ENV, STATE_GLACIER_OK, STATE_CONTENT_INDEXATION_OK, STATE_CONTENT_INDEXATION_KO, STATE_INDEXING, build_internal_filepath
+from scraper_place.config import CONFIG_TIKA, CONFIG_ENV, STATE_CONTENT_EXTRACTING, STATE_CONTENT_EXTRACTION_KO, STATE_CONTENT_EXTRACTION_OK, STATE_GLACIER_OK, build_content_filepath, build_internal_filepath
 
 
-def index():
-    """index(): Extract content from all DCE and index it in ElasticSearch.
+def extract():
+    """extract: Extract content from all DCEs
     """
 
     while True:
@@ -35,14 +28,14 @@ def index():
         dce_data = dce_list[0]
         collection.update_one(
             {'annonce_id': dce_data['annonce_id']},
-            {'$set': {'state': STATE_INDEXING}}
+            {'$set': {'state': STATE_CONTENT_EXTRACTING}}
         )
         client.close()
 
-        index_dce(dce_data=dce_data, tika_server_url=CONFIG_TIKA['tika_server_url'])
+        extract_dce(dce_data=dce_data, tika_server_url=CONFIG_TIKA['tika_server_url'])
 
-def index_dce(dce_data, tika_server_url):
-    """index_dce(): Extract the content of one DCE and give it to ElasticSearch
+def extract_dce(dce_data, tika_server_url):
+    """extract_dce: Extract the content of one DCE
     """
 
     try:
@@ -75,13 +68,14 @@ def index_dce(dce_data, tika_server_url):
 
         content = '\n'.join(content_list)
 
-        feed_elastisearch(dce_data=dce_data, content=content)
+        with open(build_content_filepath(annonce_id), 'w', encoding='utf-8') as f:
+            f.write(content)
 
         client = MongoClient()
         collection = client.place.dce
         collection.update_one(
             {'annonce_id': annonce_id},
-            {'$set': {'state': STATE_CONTENT_INDEXATION_OK}}
+            {'$set': {'state': STATE_CONTENT_EXTRACTION_OK}}
         )
         client.close()
 
@@ -96,45 +90,9 @@ def index_dce(dce_data, tika_server_url):
         collection = client.place.dce
         collection.update_one(
             {'annonce_id': annonce_id},
-            {'$set': {'state': STATE_CONTENT_INDEXATION_KO}}
+            {'$set': {'state': STATE_CONTENT_EXTRACTION_KO}}
         )
         client.close()
-
-
-def feed_elastisearch(dce_data, content):
-    data = {
-        'annonce_id': dce_data['annonce_id'],
-        'org_acronym': dce_data['org_acronym'],
-        'links_boamp': dce_data['links_boamp'],
-        'reference': dce_data['reference'],
-        'intitule': dce_data['intitule'],
-        'objet': dce_data['objet'],
-        'reglement_ref': dce_data['reglement_ref'],
-        'filename_reglement': dce_data['filename_reglement'],
-        'filename_complement': dce_data['filename_complement'],
-        'filename_avis': dce_data['filename_avis'],
-        'filename_dce': dce_data['filename_dce'],
-        'fetch_datetime': dce_data['fetch_datetime'],
-        'file_size_reglement': dce_data['file_size_reglement'],
-        'file_size_complement': dce_data['file_size_complement'],
-        'file_size_avis': dce_data['file_size_avis'],
-        'file_size_dce': dce_data['file_size_dce'],
-        'embedded_filenames_reglement': dce_data.get('embedded_filenames_reglement'),
-        'embedded_filenames_complement': dce_data.get('embedded_filenames_complement'),
-        'embedded_filenames_avis': dce_data.get('embedded_filenames_avis'),
-        'embedded_filenames_dce': dce_data.get('embedded_filenames_dce'),
-        'content': content
-    }
-
-    es_client = Elasticsearch([CONFIG_ELASTICSEARCH['elasticsearch_server_url']])
-    es_client.create(
-        index=CONFIG_ELASTICSEARCH['index_name'],
-        id='{}'.format(dce_data['annonce_id']),
-        body=data,
-        timeout='60s',
-        request_timeout=60,
-    )
-
 
 def extract_file(file_path, tika_server_url):
     url = urllib.parse.urljoin(tika_server_url, '/rmeta/text')

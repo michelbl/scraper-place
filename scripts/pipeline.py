@@ -1,5 +1,6 @@
-from scraper_place import fetch, glacier, content_indexing
+from scraper_place import fetch, glacier, extraction, indexation
 
 fetch.fetch_new_dce()
 glacier.save()
-content_indexing.index()
+extraction.extract()
+indexation.index()

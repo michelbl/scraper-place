@@ -25,6 +25,7 @@ aws_secret_access_key=xxx
 [tika]
 
 tika_server_url=http://localhost:9998/
+content_indexing_output_dir=/home/michel/scraper-place/data/content-indexing
 
 [elasticsearch]
 

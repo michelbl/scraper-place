@@ -24,9 +24,10 @@ CONFIG_ELASTICSEARCH = dict(CONFIG.items('elasticsearch'))
 STATE_FETCH_OK = 'fetch_ok'
 STATE_GLACIER_OK = 'glacier_ok'
 STATE_GLACIER_KO = 'glacier_ko'
-STATE_CONTENT_INDEXATION_OK = 'content_indexing_ok'
-STATE_CONTENT_INDEXATION_KO = 'content_indexing_ko'
-STATE_INDEXING = 'indexing'
+STATE_CONTENT_EXTRACTING = 'extracting'
+STATE_CONTENT_EXTRACTION_OK = 'extraction_ok'
+STATE_CONTENT_EXTRACTION_KO = 'extraction_ko'
+STATE_CONTENT_INDEXATION_OK = 'indexation_ok'
 
 
 def build_internal_filepath(annonce_id, original_filename, file_type):
@@ -40,3 +41,6 @@ def build_internal_filepath(annonce_id, original_filename, file_type):
     internal_filepath = os.path.join(CONFIG_FILE_STORAGE['public_directory'], internal_filename)
 
     return internal_filepath
+
+def build_content_filepath(annonce_id):
+    return os.path.join(CONFIG_FILE_STORAGE['content_indexing_output_dir'], '{}.txt'.format(annonce_id))
