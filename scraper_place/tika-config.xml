@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<properties>
+  <!--See https://cwiki.apache.org/confluence/display/TIKA/TikaServer+in+Tika+2.x -->
+  <server>
+    <params>
+      <!-- If set to 'true', this runs tika server "in process"
+          in the legacy 1.x mode.
+          This means that the server will be susceptible to infinite loops
+          and crashes.
+          If set to 'false', the server will spawn a forked
+          process and restart the forked process on catastrophic failures
+          (this was called -spawnChild mode in 1.x).
+          noFork=false is the default in 2.x
+      -->
+      <noFork>false</noFork>
+      <!-- maximum time to allow per parse before shutting down and restarting
+          the forked parser. Not allowed if noFork=true. -->
+      <taskTimeoutMillis>3600000</taskTimeoutMillis>
+      <forkedJvmArgs>
+        <arg>-Xmx10g</arg>
+      </forkedJvmArgs> 
+    </params>
+  </server>
+</properties>
