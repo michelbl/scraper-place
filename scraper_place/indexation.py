@@ -33,7 +33,7 @@ def index():
 
         index_dce(dce_data=dce_data)
 
-def index_dce(dce_data, tika_server_url):
+def index_dce(dce_data):
     """index_dce(): Index the content of one DCE using ElasticSearch
     """
 
