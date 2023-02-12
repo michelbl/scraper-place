@@ -82,3 +82,6 @@ def index_dce(dce_data):
         {'$set': {'state': STATE_CONTENT_INDEXATION_OK}}
     )
     client.close()
+
+if __name__ == 'main':
+    index()

@@ -367,3 +367,6 @@ def extract_links(request_result, regex):
     hrefs = [link.attrs['href'] for link in links if 'href' in link.attrs]
     hrefs_clean = [href for href in hrefs if re.match(regex, href)]
     return hrefs_clean
+
+if __name__ == 'main':
+    fetch_new_dce()
