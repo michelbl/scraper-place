@@ -155,5 +155,5 @@ def is_unwanted_type(filename):
         return False
     return True
 
-if __name__ == 'main':
+if __name__ == '__main__':
     extract()

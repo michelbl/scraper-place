@@ -368,5 +368,5 @@ def extract_links(request_result, regex):
     hrefs_clean = [href for href in hrefs if re.match(regex, href)]
     return hrefs_clean
 
-if __name__ == 'main':
+if __name__ == '__main__':
     fetch_new_dce()

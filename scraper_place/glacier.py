@@ -77,5 +77,5 @@ def save_dce(dce_data, s3_resource, collection):
     if CONFIG_ENV['env'] != 'production':
         print('Debug: Saved {} on AWS Glavier'.format(annonce_id))
 
-if __name__ == 'main':
+if __name__ == '__main__':
     save()
