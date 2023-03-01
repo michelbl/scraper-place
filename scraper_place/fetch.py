@@ -90,6 +90,7 @@ def fetch_current_annonces(nb_pages=0):
         counter = 0
         while (nb_pages == 0) or (counter < nb_pages):
             current_page_links, page_state, cookie = next_page(page_state, cookie, current_page_links)
+            print(f'Found {len(current_page_links)} new links')
             links_by_page.append(current_page_links)
             counter += 1
 
