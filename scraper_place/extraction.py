@@ -41,7 +41,7 @@ def extract_dce(dce_data, tika_server_url):
 
     try:
         annonce_id = dce_data['annonce_id']
-        print('{} extracting content for DCE {}'.format(time.ctime(), annonce_id))
+        # print('{} extracting content for DCE {}'.format(time.ctime(), annonce_id))
 
         content_list = []
 
