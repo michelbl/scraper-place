@@ -1,6 +1,7 @@
 
 import pathlib
 import datetime
+import gzip
 
 from bson import json_util
 import boto3
@@ -15,10 +16,10 @@ if __name__ == '__main__':
     data = list(collection.find({}))
     data_json = json_util.dumps(data)
 
-    filename = 'metadata-{}.json'.format(datetime.datetime.now().isoformat().split('T')[0])
+    filename = 'metadata-{}.json.gz'.format(datetime.datetime.now().isoformat().split('T')[0])
     file_path = pathlib.Path(CONFIG_METADATA_BACKUP['repository']) / filename
 
-    with file_path.open('w') as f:
+    with gzip.open(file_path, 'wt', encoding='UTF-8') as f:
         f.write(data_json)
 
     s3_resource = boto3.session.Session(
