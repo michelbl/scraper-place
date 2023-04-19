@@ -218,7 +218,7 @@ def fetch_data(link_annonce):
         reglement_ref = re.match(REGLEMENT_REGEX, link_reglement).groups()[0]
         response_reglement = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_reglement), stream=True, timeout=600)
         assert response_reglement.status_code == 200
-        check_content_type(response_reglement.headers['Content-Type'])
+        check_content_type(response_reglement.headers['Content-Type'], link_annonce)
         regex_attachment = r'^attachment; filename="([^"]+)";$'
         filename_reglement = re.match(regex_attachment, response_reglement.headers['Content-Disposition']).groups()[0]
 
@@ -265,10 +265,7 @@ def fetch_data(link_annonce):
         response_dce3 = requests.post(url_dce, headers={'Cookie': cookie}, data=data, stream=True, timeout=600)
         assert response_dce3.status_code == 200
 
-        content_type = response_dce3.headers['Content-Type']
-        # a few DCE have "Content-Type: application/octet-stream" even though they are zip files
-        if (content_type != 'application/zip'):
-            print('Warning: unexpected content type {} on {}'.format(content_type, link_annonce))
+        check_content_type(response_dce3.headers['Content-Type'], link_annonce)
         regex_attachment = r'^attachment; filename="([^"]+)";$'
         filename_dce = re.match(regex_attachment, response_dce3.headers['Content-Disposition']).groups()[0]
 
