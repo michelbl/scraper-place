@@ -66,13 +66,15 @@ def index_dce(dce_data):
         'content': content
     }
 
-    es_client = Elasticsearch([CONFIG_ELASTICSEARCH['elasticsearch_server_url']])
+    es_client = Elasticsearch(
+        [CONFIG_ELASTICSEARCH['elasticsearch_server_url']],
+        request_timeout=60,
+    )
     es_client.create(
         index=CONFIG_ELASTICSEARCH['index_name'],
         id='{}'.format(dce_data['annonce_id']),
-        body=data,
+        document=data,
         timeout='60s',
-        request_timeout=60,
     )
 
     client = MongoClient()
