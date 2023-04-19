@@ -22,36 +22,21 @@ Curiously, a small fraction of the DCE appear in several pages, and this is not 
 
 * Install mongodb 6 (other versions may work).
 * If you plan to replicate the files on AWS Glacier, create a vault and create a IAM user with upload permission.
-* If you plan to index the data with ElasticSearch, install it. Install a tika server 2.4.1 (other versions may work).
-* If you plan to run the Tika server on an AWS EC2 instance, configure it accordingly (give permissions RunInstances, TerminateInstances, DescribeInstances, DescribeInstanceStatus, add a key pair, allow SSH inbound traffic).
-* Create a python virtual env with python>=3.6 (I suggest using `pew`).
+* If you plan to index the data with ElasticSearch, install it.
+* Create a python virtual env with python>=3.9 (I suggest using `pew`).
 
 ### Installation
 
 * Clone this repository.
 * In the repository directory: `pip install --editable .`
 * Copy `config.ini.example` to `config.ini` and set your configuration.
-* Create the directory you configured in `config.ini` and make sure it is writable by the process that will run `scraper-place`.
-* Create a table `dce` in database `place` with an index on `annonce_id`.
-* Run `create_index.ipynb` to set up ElasticSearch.
-* Setup automatic backups for the database, see `backup_database.sh.example`.
-
-
-## Usage
-
-```
-from scraper_place import fetch, glacier, extraction, indexation
-
-fetch.fetch_new_dce()
-glacier.save()
-extraction.extract()
-indexation.index()
-```
-
-* `fetch.fetch_new_dce()` parses https://www.marches-publics.gouv.fr/ and fetches new DCEs.
-* `glacier.save()` sends a copy to AWS Glacier
-* `extraction.extract()` extracts content with Apache Tika
-* `indexation.index()` feeds content to ElasticSearch
+* Create the directories you configured in `config.ini` and make sure they are writable by the process that will run `scraper-place`.
+* Import metadata to mongo (see `scripts/import-to-mongo.ipynb`)
+* Configure ElasticSearch (see `elasticsearch.yml`)
+* Set up the ElasticSearch index (see `scripts/create_index.ipynb`)
+* Setup services (see `betterplace.service`, `tika.service`)
+* Configure nginx (see `betterplace.info`)
+* Setup crons to trigger `scripts/nightly_scraping.sh` and `scripts/backup_metadata.py` (see `crontab` for an example)
 
 ## Misc
 

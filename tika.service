@@ -1,0 +1,32 @@
+[Unit]
+Description=betterplace
+After=network.target
+
+[Service]
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm start
+WorkingDirectory=/srv/better-place
+StandardOutput=inherit
+# Or use StandardOutput=null if you don't want messages filling syslog, for more options see systemd.exec(5)
+StandardError=inherit
+Restart=always
+User=debian
+
+[Install]
+WantedBy=multi-user.target
+debian@ns31438501:/etc/systemd/system$ cat tika.service
+[Unit]
+Description=Tika Docker Container
+After=docker.service
+Requires=docker.service
+
+[Service]
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=-/usr/bin/docker stop %n
+ExecStartPre=-/usr/bin/docker rm %n
+ExecStartPre=/usr/bin/docker pull apache/tika:latest-full
+ExecStart=/usr/bin/docker run --rm --name %n -p 127.0.0.1:9998:9998 -v /srv/scraper-place/tika-config.xml:/tika-config.xml apache/tika:latest-full --config /tika-config.xml
+
+[Install]
+WantedBy=multi-user.target

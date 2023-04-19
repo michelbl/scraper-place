@@ -31,16 +31,3 @@ tika_server_url=http://localhost:9998/
 
 elasticsearch_server_url=http://localhost:9200/
 index_name=dce
-
-[aws_ec2]
-
-region_name=xxx
-aws_access_key_id=xxx
-aws_secret_access_key=xxx
-
-security_group=xxx
-
-key_name=xxx
-private_key=/home/michel/scraper-place/scraper-place.pem
-
-logs_directory=/home/michel/scraper-place/data/aws_logs

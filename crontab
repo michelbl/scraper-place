@@ -1,0 +1,2 @@
+3 3 * * * debian /srv/scraper-place/scripts/nightly_scraping.sh
+14 22 * * 4 debian /home/debian/.local/share/virtualenvs/place/bin/python /srv/scraper-place/scripts/backup_metadata.py
