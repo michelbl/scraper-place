@@ -218,8 +218,7 @@ def fetch_data(link_annonce):
         reglement_ref = re.match(REGLEMENT_REGEX, link_reglement).groups()[0]
         response_reglement = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_reglement), stream=True, timeout=600)
         assert response_reglement.status_code == 200
-        content_type = response_reglement.headers['Content-Type']
-        assert content_type in {'application/octet-stream', 'application/zip'}, content_type
+        check_content_type(response_reglement.headers['Content-Type'])
         regex_attachment = r'^attachment; filename="([^"]+)";$'
         filename_reglement = re.match(regex_attachment, response_reglement.headers['Content-Disposition']).groups()[0]
 
@@ -267,7 +266,9 @@ def fetch_data(link_annonce):
         assert response_dce3.status_code == 200
 
         content_type = response_dce3.headers['Content-Type']
-        assert content_type == 'application/zip', content_type
+        # a few DCE have "Content-Type: application/octet-stream" even though they are zip files
+        if (content_type != 'application/zip'):
+            print('Warning: unexpected content type {} on {}'.format(content_type, link_annonce))
         regex_attachment = r'^attachment; filename="([^"]+)";$'
         filename_dce = re.match(regex_attachment, response_dce3.headers['Content-Disposition']).groups()[0]
 
@@ -369,6 +370,11 @@ def extract_links(request_result, regex):
     hrefs = [link.attrs['href'] for link in links if 'href' in link.attrs]
     hrefs_clean = [href for href in hrefs if re.match(regex, href)]
     return hrefs_clean
+
+def check_content_type(content_type, link):
+    # a few DCE have "Content-Type: application/octet-stream" even though they are zip files
+    if (content_type not in {'application/zip', 'application/octet-stream'}):
+        print('Warning: unexpected content type {} on {}'.format(content_type, link))
 
 if __name__ == '__main__':
     fetch_new_dce()
