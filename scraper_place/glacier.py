@@ -2,6 +2,7 @@
 """
 
 import os
+import logging
 
 from pymongo import MongoClient
 import boto3
@@ -46,7 +47,7 @@ def save_dce(dce_data, s3_resource, collection):
 
         file_size = os.path.getsize(internal_filepath)
         if file_size >= 4294967296:
-            print('Warning: {} is too large to be saved on AWS Glacier'.format(internal_filepath))
+            logging.warning('{} is too large to be saved on AWS Glacier'.format(internal_filepath))
 
             collection.update_one(
                 {'annonce_id': annonce_id},
@@ -60,8 +61,7 @@ def save_dce(dce_data, s3_resource, collection):
 
         internal_filepath = build_internal_filepath(annonce_id=annonce_id, original_filename=filename, file_type=file_type)
         internal_filename = os.path.basename(internal_filepath)
-        if CONFIG_ENV['env'] != 'production':
-            print('Debug: Saving {} on AWS S3 Glacier Deep Archive...'.format(internal_filepath))
+        logging.debug('Saving {} on AWS S3 Glacier Deep Archive...'.format(internal_filepath))
         s3_resource.meta.client.upload_file(
             Filename=internal_filepath,
             Bucket=CONFIG_AWS_GLACIER['bucket_name'],
@@ -74,8 +74,7 @@ def save_dce(dce_data, s3_resource, collection):
         {'$set': {'state': STATE_GLACIER_OK}},
     )
 
-    if CONFIG_ENV['env'] != 'production':
-        print('Debug: Saved {} on AWS Glavier'.format(annonce_id))
+    logging.debug('Saved {} on AWS Glavier'.format(annonce_id))
 
 if __name__ == '__main__':
     save()

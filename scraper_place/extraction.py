@@ -6,6 +6,7 @@ import os
 import urllib
 import traceback
 import time
+import logging
 
 from pymongo import MongoClient
 import requests
@@ -41,7 +42,7 @@ def extract_dce(dce_data, tika_server_url):
 
     try:
         annonce_id = dce_data['annonce_id']
-        # print('{} extracting content for DCE {}'.format(time.ctime(), annonce_id))
+        logging.debug('{} extracting content for DCE {}'.format(time.ctime(), annonce_id))
 
         content_list = []
 
@@ -53,8 +54,7 @@ def extract_dce(dce_data, tika_server_url):
                 continue
 
             internal_filepath = build_internal_filepath(annonce_id=annonce_id, original_filename=filename, file_type=file_type)
-            if CONFIG_ENV['env'] != 'production':
-                print('Debug: Extracting content of {}...'.format(internal_filepath))
+            logging.debug('Extracting content of {}...'.format(internal_filepath))
 
             content, embedded_resource_paths = extract_file(file_path=internal_filepath, tika_server_url=tika_server_url)
 
@@ -81,11 +81,10 @@ def extract_dce(dce_data, tika_server_url):
         )
         client.close()
 
-        if CONFIG_ENV['env'] != 'production':
-            print('Debug: Extracted content from {}'.format(annonce_id))
+        logging.debug('Extracted content from {}'.format(annonce_id))
 
     except Exception as exception:
-        print("Warning: exception occured, aborting DCE ({}: {}) on {}".format(type(exception).__name__, exception, annonce_id))
+        logging.warning("Exception occured, aborting DCE ({}: {}) on {}".format(type(exception).__name__, exception, annonce_id))
         traceback.print_exc()
 
         client = MongoClient()

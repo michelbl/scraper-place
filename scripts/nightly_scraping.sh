@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -o xtrace
+#set -o xtrace
 set -o errexit
 
 PYTHON_PATH=/home/debian/.local/share/virtualenvs/place/bin/python

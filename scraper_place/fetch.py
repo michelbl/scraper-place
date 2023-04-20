@@ -10,6 +10,7 @@ import re
 from collections import Counter
 import traceback
 import os
+import logging
 
 import requests
 from bs4 import BeautifulSoup
@@ -37,12 +38,12 @@ def fetch_new_dce():
         nb_pages = 1
 
     links = fetch_current_annonces(nb_pages=nb_pages)
-    print("{} links".format(len(links)))
+    logging.debug("{} links".format(len(links)))
 
     nb_processed = 0
     for link in links:
         nb_processed += process_link(link)
-    print("Info: Processed {} DCE".format(nb_processed))
+    logging.info("Processed {} DCE".format(nb_processed))
 
 
 def process_link(link):
@@ -62,7 +63,7 @@ def process_link(link):
     try:
         annonce_data = fetch_data(link)
     except Exception as exception:
-        print("Warning: exception occured ({}: {}) on {}".format(type(exception).__name__, exception, link))
+        logging.warning("Exception occured ({}: {}) on {}".format(type(exception).__name__, exception, link))
         traceback.print_exc()
         return 0
 
@@ -90,7 +91,7 @@ def fetch_current_annonces(nb_pages=0):
         counter = 0
         while (nb_pages == 0) or (counter < nb_pages):
             current_page_links, page_state, cookie = next_page(page_state, cookie, current_page_links)
-            # print(f'Found {len(current_page_links)} new links')
+            logging.debug(f'Found {len(current_page_links)} new links')
             links_by_page.append(current_page_links)
             counter += 1
 
@@ -103,7 +104,7 @@ def fetch_current_annonces(nb_pages=0):
     if len(all_links) != len(set(all_links)):
         duplicates = [k for k, v in Counter(all_links).items() if v > 1]
         nb_duplicates = len(duplicates)
-        print('Warning: {} DCE found multiple times'.format(nb_duplicates))
+        logging.info('{} DCE found multiple times'.format(nb_duplicates))
 
     return all_links
 
@@ -371,7 +372,7 @@ def extract_links(request_result, regex):
 def check_content_type(content_type, link):
     # a few DCE have "Content-Type: application/octet-stream" even though they are zip files
     if (content_type not in {'application/zip', 'application/octet-stream'}):
-        print('Warning: unexpected content type {} on {}'.format(content_type, link))
+        logging.warning('Unexpected content type {} on {}'.format(content_type, link))
 
 if __name__ == '__main__':
     fetch_new_dce()

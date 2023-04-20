@@ -2,6 +2,8 @@
 """
 import configparser
 import os
+import logging
+import logging.handlers
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -44,3 +46,24 @@ def build_internal_filepath(annonce_id, original_filename, file_type):
 
 def build_content_filepath(annonce_id):
     return os.path.join(CONFIG_FILE_STORAGE['content_indexing_output_dir'], '{}.txt'.format(annonce_id))
+
+def configure_logging():
+    logger = logging.getLogger()
+    formatter = logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s'
+    )
+    logger.setLevel(logging.DEBUG)
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.WARNING)
+    stream_handler.setFormatter(formatter)
+
+    file_handler = logging.handlers.TimedRotatingFileHandler(
+        filename=CONFIG_ENV['log_path'], when='midnight', backupCount=0)
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+
+configure_logging()

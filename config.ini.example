@@ -2,6 +2,7 @@
 
 env=production
 #env=dev
+log_path=/var/log/scraper-place/scraper-place.log
 
 [file_storage]
 
