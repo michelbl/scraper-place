@@ -12,7 +12,7 @@ from pymongo import MongoClient
 import requests
 from elasticsearch import Elasticsearch
 
-from scraper_place.config import CONFIG_ELASTICSEARCH, CONFIG_ENV, STATE_CONTENT_EXTRACTION_OK, STATE_CONTENT_INDEXATION_OK, build_content_filepath
+from scraper_place.config import CONFIG_ELASTICSEARCH, CONFIG_ENV, STATE_CONTENT_EXTRACTION_OK, STATE_CONTENT_INDEXATION_OK, build_extract_filepath
 
 
 def index():
@@ -39,7 +39,7 @@ def index_dce(dce_data):
 
     annonce_id = dce_data['annonce_id']
 
-    with open(build_content_filepath(annonce_id), 'r', encoding='utf-8') as f:
+    with open(build_extract_filepath(annonce_id), 'r', encoding='utf-8') as f:
         content = f.read()
 
     data = {

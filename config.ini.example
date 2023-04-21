@@ -7,20 +7,15 @@ log_path=/var/log/scraper-place/scraper-place.log
 [file_storage]
 
 public_directory=/home/michel/scraper-place/data/public
-content_indexing_output_dir=/home/michel/scraper-place/data/content-indexing
+extract_output_dir=/home/michel/scraper-place/data/extract
+metadata_dir=/home/michel/projects/scraper-place/data/backups
 
-[metadata_backup]
-
-repository=/home/michel/projects/scraper-place/data/backups
-region_name=xxx
-bucket_name=xxx
-aws_access_key_id=xxx
-aws_secret_access_key=xxx
-
-[aws_glacier]
+[s3]
 
 region_name=xxx
-bucket_name=xxx
+metadata_backup_bucket_name=xxx
+dce_backup_bucket_name=xxx
+extract_backup_bucket_name=xxx
 aws_access_key_id=xxx
 aws_secret_access_key=xxx
 

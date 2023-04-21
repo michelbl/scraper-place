@@ -7,16 +7,24 @@ import urllib
 import traceback
 import time
 import logging
+import gzip
 
 from pymongo import MongoClient
 import requests
+import boto3
 
-from scraper_place.config import CONFIG_TIKA, CONFIG_ENV, STATE_CONTENT_EXTRACTING, STATE_CONTENT_EXTRACTION_KO, STATE_CONTENT_EXTRACTION_OK, STATE_GLACIER_OK, build_content_filepath, build_internal_filepath
+from scraper_place.config import CONFIG_S3, CONFIG_TIKA, STATE_CONTENT_EXTRACTING, STATE_CONTENT_EXTRACTION_KO, STATE_CONTENT_EXTRACTION_OK, STATE_GLACIER_OK, build_extract_filepath, build_internal_filepath
 
 
 def extract():
     """extract: Extract content from all DCEs
     """
+
+    s3_resource = boto3.session.Session(
+        aws_access_key_id=CONFIG_S3['aws_access_key_id'],
+        aws_secret_access_key=CONFIG_S3['aws_secret_access_key'],
+        region_name=CONFIG_S3['region_name'],
+    ).resource('s3')
 
     while True:
         client = MongoClient()
@@ -34,9 +42,13 @@ def extract():
         )
         client.close()
 
-        extract_dce(dce_data=dce_data, tika_server_url=CONFIG_TIKA['tika_server_url'])
+        extract_dce(
+            dce_data=dce_data,
+            tika_server_url=CONFIG_TIKA['tika_server_url'],
+            s3_resource=s3_resource,
+        )
 
-def extract_dce(dce_data, tika_server_url):
+def extract_dce(dce_data, tika_server_url, s3_resource):
     """extract_dce: Extract the content of one DCE
     """
 
@@ -70,8 +82,17 @@ def extract_dce(dce_data, tika_server_url):
 
         content = '\n'.join(content_list)
 
-        with open(build_content_filepath(annonce_id), 'w', encoding='utf-8') as f:
+        extract_filepath = build_extract_filepath(annonce_id)
+        extract_filename = os.path.basename(extract_filepath)
+        with gzip.open(extract_filepath, 'wt', encoding='UTF-8') as f:
             f.write(content)
+
+        s3_resource.meta.client.upload_file(
+            Filename=extract_filepath,
+            Bucket=CONFIG_S3['extract_backup_bucket_name'],
+            Key=extract_filename,
+            ExtraArgs={'StorageClass': 'ONEZONE_IA'}
+        )
 
         client = MongoClient()
         collection = client.place.dce

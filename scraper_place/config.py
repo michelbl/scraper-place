@@ -16,8 +16,6 @@ CONFIG.read(CONFIG_PATH)
 
 CONFIG_ENV = dict(CONFIG.items('env'))
 CONFIG_FILE_STORAGE = dict(CONFIG.items('file_storage'))
-CONFIG_METADATA_BACKUP = dict(CONFIG.items('metadata_backup'))
-CONFIG_AWS_GLACIER = dict(CONFIG.items('aws_glacier'))
 CONFIG_TIKA = dict(CONFIG.items('tika'))
 CONFIG_ELASTICSEARCH = dict(CONFIG.items('elasticsearch'))
 
@@ -44,8 +42,8 @@ def build_internal_filepath(annonce_id, original_filename, file_type):
 
     return internal_filepath
 
-def build_content_filepath(annonce_id):
-    return os.path.join(CONFIG_FILE_STORAGE['content_indexing_output_dir'], '{}.txt'.format(annonce_id))
+def build_extract_filepath(annonce_id):
+    return os.path.join(CONFIG_FILE_STORAGE['extract_output_dir'], '{}.txt.gz'.format(annonce_id))
 
 def configure_logging():
     logger = logging.getLogger()
