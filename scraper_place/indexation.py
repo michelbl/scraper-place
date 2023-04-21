@@ -7,6 +7,7 @@ import json
 import os
 import urllib
 import traceback
+import gzip
 
 from pymongo import MongoClient
 import requests
@@ -39,7 +40,7 @@ def index_dce(dce_data):
 
     annonce_id = dce_data['annonce_id']
 
-    with open(build_extract_filepath(annonce_id), 'r', encoding='utf-8') as f:
+    with gzip.open(build_extract_filepath(annonce_id), 'rt', encoding='UTF-8') as f:
         content = f.read()
 
     data = {
