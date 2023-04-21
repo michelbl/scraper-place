@@ -16,6 +16,7 @@ CONFIG.read(CONFIG_PATH)
 
 CONFIG_ENV = dict(CONFIG.items('env'))
 CONFIG_FILE_STORAGE = dict(CONFIG.items('file_storage'))
+CONFIG_S3 = dict(CONFIG.items('s3'))
 CONFIG_TIKA = dict(CONFIG.items('tika'))
 CONFIG_ELASTICSEARCH = dict(CONFIG.items('elasticsearch'))
 
