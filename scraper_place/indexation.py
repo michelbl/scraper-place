@@ -3,10 +3,6 @@
 Make sure an ElasticSearch server is running.
 """
 
-import json
-import os
-import urllib
-import traceback
 import gzip
 
 from pymongo import MongoClient

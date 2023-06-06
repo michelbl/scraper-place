@@ -105,8 +105,9 @@ def extract_dce(dce_data, tika_server_url, s3_resource):
         logging.debug('Extracted content from {}'.format(annonce_id))
 
     except Exception as exception:
-        logging.warning("Exception occured, aborting DCE ({}: {}) on {}".format(type(exception).__name__, exception, annonce_id))
-        traceback.print_exc()
+        logging.warning("Exception of type {} occured, aborting DCE {}".format(type(exception).__name__, annonce_id))
+        logging.debug("Exception details: {}".format(exception))
+        logging.debug(traceback.format_exc())
 
         client = MongoClient()
         collection = client.place.dce

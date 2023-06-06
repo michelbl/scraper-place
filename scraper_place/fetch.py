@@ -63,8 +63,9 @@ def process_link(link):
     try:
         annonce_data = fetch_data(link)
     except Exception as exception:
-        logging.warning("Exception occured ({}: {}) on {}".format(type(exception).__name__, exception, link))
-        traceback.print_exc()
+        logging.warning("Exception of type {} on {}".format(type(exception).__name__, link))
+        logging.debug("Exception details: {}".format(exception))
+        logging.debug(traceback.format_exc())
         return 0
 
     annonce_data['fetch_datetime'] = datetime.datetime.now()
