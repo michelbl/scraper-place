@@ -46,6 +46,7 @@ def index_dce(dce_data):
         'reference': dce_data['reference'],
         'intitule': dce_data['intitule'],
         'objet': dce_data['objet'],
+        'organisme': dce_data['organisme'],
         'reglement_ref': dce_data['reglement_ref'],
         'filename_reglement': dce_data['filename_reglement'],
         'filename_complement': dce_data['filename_complement'],

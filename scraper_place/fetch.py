@@ -139,6 +139,8 @@ def fetch_data(link_annonce):
     assert recap_data[2].find('label').text.strip() == "Objet :"
     objet = recap_data[2].find('div').find('span').text.strip()
 
+    assert recap_data[3].find('label').text.strip() == "Organisme :"
+    organisme = recap_data[3].find('div').find('span').text.strip()
 
     # Get links to files
 
@@ -281,6 +283,7 @@ def fetch_data(link_annonce):
         'reference': reference,
         'intitule': intitule,
         'objet': objet,
+        'organisme': organisme,
         'reglement_ref': reglement_ref,
         'filename_reglement': filename_reglement,
         'filename_complement': filename_complement,
