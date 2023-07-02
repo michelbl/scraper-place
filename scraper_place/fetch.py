@@ -131,13 +131,13 @@ def fetch_data(link_annonce):
     recap_data = soup.find_all(class_="col-md-10 text-justify")
 
     assert recap_data[0].find('label').text.strip() == "Référence :"
-    reference = recap_data[0].find('div').find('div').text.strip()
+    reference = recap_data[0].find('div').find('span').text.strip()
 
     assert recap_data[1].find('label').text.strip() == "Intitulé :"
-    intitule = recap_data[1].find('div').find('div').text.strip()
+    intitule = recap_data[1].find('div').find('span').text.strip()
 
     assert recap_data[2].find('label').text.strip() == "Objet :"
-    objet = recap_data[2].find('div').find('div').text.strip()
+    objet = recap_data[2].find('div').find('span').text.strip()
 
 
     # Get links to files
