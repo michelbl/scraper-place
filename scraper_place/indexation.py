@@ -9,7 +9,7 @@ from pymongo import MongoClient
 import requests
 from elasticsearch import Elasticsearch
 
-from scraper_place.config import CONFIG_ELASTICSEARCH, CONFIG_ENV, STATE_CONTENT_EXTRACTION_OK, STATE_CONTENT_INDEXATION_OK, build_extract_filepath
+from scraper_place.config import CONFIG_ELASTICSEARCH, CONFIG_MONGODB, CONFIG_ENV, STATE_CONTENT_EXTRACTION_OK, STATE_CONTENT_INDEXATION_OK, build_extract_filepath
 
 
 def index():
@@ -17,7 +17,7 @@ def index():
     """
 
     while True:
-        client = MongoClient()
+        client = MongoClient(CONFIG_MONGODB['mongo_uri'])
         collection = client.place.dce
         dce_list = list(collection.find({'state': STATE_CONTENT_EXTRACTION_OK}).limit(1))
 
@@ -75,7 +75,7 @@ def index_dce(dce_data):
         timeout='60s',
     )
 
-    client = MongoClient()
+    client = MongoClient(CONFIG_MONGODB['mongo_uri'])
     collection = client.place.dce
     collection.update_one(
         {'annonce_id': annonce_id},

@@ -13,7 +13,7 @@ from pymongo import MongoClient
 import requests
 import boto3
 
-from scraper_place.config import CONFIG_S3, CONFIG_TIKA, STATE_CONTENT_EXTRACTING, STATE_CONTENT_EXTRACTION_KO, STATE_CONTENT_EXTRACTION_OK, STATE_GLACIER_OK, build_extract_filepath, build_internal_filepath
+from scraper_place.config import CONFIG_ENV, CONFIG_MONGODB, CONFIG_S3, CONFIG_TIKA, STATE_CONTENT_EXTRACTING, STATE_CONTENT_EXTRACTION_KO, STATE_CONTENT_EXTRACTION_OK, STATE_GLACIER_OK, build_extract_filepath, build_internal_filepath
 
 
 def extract():
@@ -24,10 +24,10 @@ def extract():
         aws_access_key_id=CONFIG_S3['aws_access_key_id'],
         aws_secret_access_key=CONFIG_S3['aws_secret_access_key'],
         region_name=CONFIG_S3['region_name'],
-    ).resource('s3')
+    ).resource('s3', endpoint_url=CONFIG_S3['endpoint_url'])
 
     while True:
-        client = MongoClient()
+        client = MongoClient(CONFIG_MONGODB['mongo_uri'])
         collection = client.place.dce
         dce_list = list(collection.find({'state': STATE_GLACIER_OK}).limit(1))
 
@@ -70,7 +70,7 @@ def extract_dce(dce_data, tika_server_url, s3_resource):
 
             content, embedded_resource_paths = extract_file(file_path=internal_filepath, tika_server_url=tika_server_url)
 
-            client = MongoClient()
+            client = MongoClient(CONFIG_MONGODB['mongo_uri'])
             collection = client.place.dce
             collection.update_one(
                 {'annonce_id': annonce_id},
@@ -91,10 +91,10 @@ def extract_dce(dce_data, tika_server_url, s3_resource):
             Filename=extract_filepath,
             Bucket=CONFIG_S3['extract_backup_bucket_name'],
             Key=extract_filename,
-            ExtraArgs={'StorageClass': 'ONEZONE_IA'}
+            ExtraArgs={'StorageClass': CONFIG_S3['storage_class_one_zone_ia']}
         )
 
-        client = MongoClient()
+        client = MongoClient(CONFIG_MONGODB['mongo_uri'])
         collection = client.place.dce
         collection.update_one(
             {'annonce_id': annonce_id},
@@ -109,7 +109,7 @@ def extract_dce(dce_data, tika_server_url, s3_resource):
         logging.debug("Exception details: {}".format(exception))
         logging.debug(traceback.format_exc())
 
-        client = MongoClient()
+        client = MongoClient(CONFIG_MONGODB['mongo_uri'])
         collection = client.place.dce
         collection.update_one(
             {'annonce_id': annonce_id},

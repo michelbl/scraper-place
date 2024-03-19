@@ -1,0 +1,61 @@
+version: '3'
+
+services:
+  #python  app
+  app:
+    container_name: scraperplace-python
+    build: .
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: tail -f /dev/null
+
+  db:
+    container_name: scraperplace-mongo
+    image: mongo:6.0.14
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    ports:
+      - "27017:27017"
+
+  elasticsearch:
+    container_name: scraperplace-es
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false # disable api key security
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1G
+
+  tika:
+    container_name: scraperplace-tika
+    image: logicalspark/docker-tikaserver
+    ports:
+      - "9998:9998"
+
+  minio: 
+    container_name: scraperplace-minio
+    image: minio/minio
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
+volumes:
+  mongodb_data:
+  elasticsearch_data:
+  minio_data:
