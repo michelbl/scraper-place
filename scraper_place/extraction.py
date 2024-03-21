@@ -24,7 +24,7 @@ def extract():
         aws_access_key_id=CONFIG_S3['aws_access_key_id'],
         aws_secret_access_key=CONFIG_S3['aws_secret_access_key'],
         region_name=CONFIG_S3['region_name'],
-    ).resource('s3', endpoint_url=CONFIG_S3['endpoint_url'])
+    ).resource('s3', endpoint_url=CONFIG_S3.get('endpoint_url'))
 
     while True:
         client = MongoClient(CONFIG_MONGODB['mongo_uri'])
@@ -91,7 +91,7 @@ def extract_dce(dce_data, tika_server_url, s3_resource):
             Filename=extract_filepath,
             Bucket=CONFIG_S3['extract_backup_bucket_name'],
             Key=extract_filename,
-            ExtraArgs={'StorageClass': CONFIG_S3['storage_class_one_zone_ia']}
+            ExtraArgs={'StorageClass': CONFIG_S3['extract_backups_storage_class']}
         )
 
         client = MongoClient(CONFIG_MONGODB['mongo_uri'])

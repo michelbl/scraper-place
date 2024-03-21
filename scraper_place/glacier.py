@@ -66,7 +66,7 @@ def save_dce(dce_data, s3_resource, collection):
             Filename=internal_filepath,
             Bucket=CONFIG_S3['dce_backup_bucket_name'],
             Key=internal_filename,
-            ExtraArgs={'StorageClass': CONFIG_S3['storage_class_deep_archive']}
+            ExtraArgs={'StorageClass': CONFIG_S3['glacier_storage_class']}
         )
 
     collection.update_one(

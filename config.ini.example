@@ -18,8 +18,8 @@ dce_backup_bucket_name=xxx
 extract_backup_bucket_name=xxx
 aws_access_key_id=xxx
 aws_secret_access_key=xxx
-storage_class_deep_archive=DEEP_ARCHIVE
-storage_class_one_zone_ia=ONEZONE_IA
+glacier_storage_class=DEEP_ARCHIVE
+extract_backups_storage_class=ONEZONE_IA
 
 [tika]
 

@@ -56,14 +56,17 @@ curl -XPUT 'localhost:9200/_cluster/settings' --data '{"transient":{"logger._roo
 
 ## Dev Docker
 
+* Copy `config.docker.ini` to `config.ini` 
+
+* Create buckets in minio according to config.ini
+
 ```bash
 docker-compose up --build
 ```
 
-Create buckets in minio according to config.ini
+* Wait for elasticsearch to launch... (might takes minutes)
 
-Wait for elasticsearch to launch... (might takes minutes)
-
+* Create index in elasticsearch :
 ```bash
 curl -X PUT "localhost:9200/dce" -H 'Content-Type: application/json' -d'
 {
@@ -84,6 +87,7 @@ curl -X PUT "localhost:9200/dce" -H 'Content-Type: application/json' -d'
     }
 }'
 ```
+* Get into python container and execute python commands in the following order (same as cron job)
 
 > docker exec -it scraperplace-python sh
 
