@@ -21,7 +21,7 @@ def save():
         aws_access_key_id=CONFIG_S3['aws_access_key_id'],
         aws_secret_access_key=CONFIG_S3['aws_secret_access_key'],
         region_name=CONFIG_S3['region_name'],
-    ).resource('s3', endpoint_url=CONFIG_S3['endpoint_url'])
+    ).resource('s3', endpoint_url=CONFIG_S3.get('endpoint_url'))
 
     cursor = collection.find({'state': STATE_FETCH_OK})
     for dce_data in cursor:
