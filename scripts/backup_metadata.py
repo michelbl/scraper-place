@@ -31,5 +31,5 @@ if __name__ == '__main__':
         Filename=file_path.as_posix(),
         Bucket=CONFIG_S3['metadata_backup_bucket_name'],
         Key=filename,
-        ExtraArgs={'StorageClass': 'ONEZONE_IA'},
+        ExtraArgs={'StorageClass': CONFIG_S3['extract_backups_storage_class']},
     )

@@ -16,7 +16,7 @@ import requests
 from bs4 import BeautifulSoup
 from pymongo import MongoClient
 
-from scraper_place.config import CONFIG_ENV, STATE_FETCH_OK, build_internal_filepath
+from scraper_place.config import CONFIG_MONGODB, CONFIG_ENV, STATE_FETCH_OK, build_internal_filepath
 
 
 URL_SEARCH = 'https://www.marches-publics.gouv.fr/?page=Entreprise.EntrepriseAdvancedSearch&AllCons'
@@ -53,7 +53,7 @@ def process_link(link):
     """
     annonce_id = re.match(LINK_REGEX, link).groups()[0]
 
-    client = MongoClient()
+    client = MongoClient(CONFIG_MONGODB['mongo_uri'])
     collection = client.place.dce
 
     # abort if the DCE is already processed

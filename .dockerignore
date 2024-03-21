@@ -1,0 +1,7 @@
+/data/**/*
+
+.ipynb_checkpoints
+__pycache__
+*.pyc
+scraper_place.egg-info
+*.log

@@ -52,3 +52,51 @@ To use debug logging on elasticsearch:
 ```
 curl -XPUT 'localhost:9200/_cluster/settings' --data '{"transient":{"logger._root":"DEBUG"}}' -H'Content-Type: application/json'
 ```
+
+
+## Dev Docker
+
+* Copy `config.docker.ini` to `config.ini` 
+
+* Create buckets in minio according to config.ini
+
+```bash
+docker-compose up --build
+```
+
+* Wait for elasticsearch to launch... (might takes minutes)
+
+* Create index in elasticsearch :
+```bash
+curl -X PUT "localhost:9200/dce" -H 'Content-Type: application/json' -d'
+{
+    "settings" : {
+        "index" : {
+            "number_of_shards" : 5, 
+            "number_of_replicas" : 0
+        }
+    },
+    "mappings": {
+        "dynamic": "true",
+        "properties": {
+            "content": {
+                "type": "text",
+                "term_vector": "with_positions_offsets"
+            }
+        }
+    }
+}'
+```
+* Get into python container and execute python commands in the following order (same as cron job)
+
+> docker exec -it scraperplace-python sh
+
+```bash
+python scraper_place/fetch.py
+
+python scraper_place/glacier.py
+
+python scraper_place/extraction.py
+
+python scraper_place/indexation.py
+```

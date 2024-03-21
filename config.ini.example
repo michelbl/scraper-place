@@ -18,6 +18,8 @@ dce_backup_bucket_name=xxx
 extract_backup_bucket_name=xxx
 aws_access_key_id=xxx
 aws_secret_access_key=xxx
+glacier_storage_class=DEEP_ARCHIVE
+extract_backups_storage_class=ONEZONE_IA
 
 [tika]
 
@@ -27,3 +29,7 @@ tika_server_url=http://localhost:9998/
 
 elasticsearch_server_url=http://localhost:9200/
 index_name=dce
+
+[mongodb]
+
+mongo_uri=mongodb://localhost:27017/
