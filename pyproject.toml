@@ -13,7 +13,7 @@ authors = [{ name = "Michel Blancard" }]
 dependencies = [
     "beautifulsoup4>=4.15.0",
     "boto3>=1.43.58",
-    "elasticsearch>=8.19.3,<9",
+    "elasticsearch>=9.4.1,<10",
     "pymongo>=4.17.0",
     "requests>=2.34.2",
     "Unidecode>=1.4.0",
