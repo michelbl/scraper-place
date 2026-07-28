@@ -3,7 +3,7 @@ Description=betterplace
 After=network.target
 
 [Service]
-Environment=NODE_VERSION=20.11.1 NODE_ENV=production
+Environment=NODE_VERSION=22.23.1 NODE_ENV=production
 ExecStart=/home/debian/.nvm/nvm-exec npm start
 WorkingDirectory=/srv/better-place
 StandardOutput=inherit

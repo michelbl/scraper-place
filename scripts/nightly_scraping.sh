@@ -2,7 +2,7 @@
 #set -o xtrace
 set -o errexit
 
-PYTHON_PATH=/home/debian/.local/share/virtualenvs/place/bin/python
+PYTHON_PATH=/srv/scraper-place/.venv/bin/python
 SCRAPER_PLACE_PATH=/srv/scraper-place/scraper_place
 $PYTHON_PATH $SCRAPER_PLACE_PATH/fetch.py
 $PYTHON_PATH $SCRAPER_PLACE_PATH/glacier.py

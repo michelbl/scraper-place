@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scraper-place"
+version = "2.2.0"
+description = "Scraper for https://www.marches-publics.gouv.fr/"
+readme = "README.md"
+requires-python = ">=3.14"
+license = "MIT"
+authors = [{ name = "Michel Blancard" }]
+dependencies = [
+    "beautifulsoup4>=4.15.0",
+    "boto3>=1.43.58",
+    "elasticsearch>=8.19.3,<9",
+    "pymongo>=4.17.0",
+    "requests>=2.34.2",
+    "Unidecode>=1.4.0",
+]
+
+[project.optional-dependencies]
+notebooks = [
+    "jupyter>=1.1.1",
+    "matplotlib>=3.11.1",
+]
+
+[tool.setuptools.packages.find]
+include = ["scraper_place*"]
+
+[tool.uv]
+package = true

@@ -17,7 +17,7 @@
           the forked parser. Not allowed if noFork=true. -->
       <taskTimeoutMillis>3600000</taskTimeoutMillis>
       <forkedJvmArgs>
-        <arg>-Xmx10g</arg>
+        <arg>-Xmx15g</arg>
       </forkedJvmArgs> 
     </params>
   </server>

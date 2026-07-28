@@ -1,14 +1,37 @@
-import json, subprocess
+"""Delete archives from an AWS Glacier vault using an inventory export.
 
-input_file_name = 'inventory.json'
-vault_name = 'scraper-place-prod'
+Expects inventory.json (Glacier inventory job output) in the working directory.
+"""
 
-with open(input_file_name, 'r') as f:
-    inv = json.load(f)
-archive_list = inv['ArchiveList']
+import json
 
-for i, archive in enumerate(archive_list):
-    if i % 1000 == 0:
-        print(i)
-    command = "aws glacier delete-archive --archive-id='" + archive['ArchiveId'] + "' --vault-name " + vault_name + " --account-id -"
-    subprocess.run(command, shell=True, check=True)
+import boto3
+
+from scraper_place.config import CONFIG_S3
+
+INPUT_FILE_NAME = 'inventory.json'
+VAULT_NAME = 'scraper-place-prod'
+
+
+def main():
+    client = boto3.session.Session(
+        aws_access_key_id=CONFIG_S3['aws_access_key_id'],
+        aws_secret_access_key=CONFIG_S3['aws_secret_access_key'],
+        region_name=CONFIG_S3['region_name'],
+    ).client('glacier')
+
+    with open(INPUT_FILE_NAME, encoding='utf-8') as inventory_file:
+        archive_list = json.load(inventory_file)['ArchiveList']
+
+    for i, archive in enumerate(archive_list):
+        if i % 1000 == 0:
+            print(i)
+        client.delete_archive(
+            accountId='-',
+            vaultName=VAULT_NAME,
+            archiveId=archive['ArchiveId'],
+        )
+
+
+if __name__ == '__main__':
+    main()

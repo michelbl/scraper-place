@@ -30,12 +30,13 @@ Curiously, a small fraction of the DCE appear in several pages, and this is not 
 * Install mongodb 6 (other versions may work).
 * If you plan to replicate the files on AWS Glacier, create a vault and create a IAM user with upload permission.
 * If you plan to index the data with ElasticSearch, install it.
-* Create a python virtual env with python>=3.9 (I suggest using `pew`).
+* Install [uv](https://docs.astral.sh/uv/) (manages Python 3.14+ and the project environment).
 
 ### Installation
 
 * Clone this repository.
-* In the repository directory: `pip install --editable .`
+* In the repository directory: `uv sync` (creates `.venv` with Python >=3.14 and installs dependencies).
+* For notebooks: `uv sync --extra notebooks`
 * Copy `config.ini.example` to `config.ini` and set your configuration.
 * Create the directories you configured in `config.ini` and make sure they are writable by the process that will run `scraper-place`.
 * Import metadata to mongo (see `scripts/import-to-mongo.ipynb`)
