@@ -25,7 +25,59 @@ PAGE_STATE_REGEX = 'name="PRADO_PAGESTATE" id="PRADO_PAGESTATE" value="([a-zA-Z0
 LINK_REGEX = r'^https://www\.marches-publics\.gouv\.fr/app\.php/entreprise/consultation/([\d]+)\?orgAcronyme=([\da-z]+)$'
 REGLEMENT_REGEX = r'^/index.php\?page=Entreprise\.EntrepriseDownloadReglement&id=([a-zA-Z\d=]+)&orgAcronyme=([\da-z]+)$'
 BOAMP_REGEX = r'^http://www\.boamp\.fr/(?:index\.php/)?avis/detail/([\d-]+)(?:/[\d]+)?$'
+DATE_LIMITE_REGEX = re.compile(r'^(\d{2}/\d{2}/\d{4} \d{2}:\d{2})')
 
+
+def _normalize_label(text):
+    return ' '.join(text.split()).replace('\xa0', ' ').strip()
+
+
+def extract_labeled_value(soup, label_prefix):
+    """Return the text value associated with a PLACE label, or None if missing."""
+    for label in soup.find_all('label'):
+        label_text = _normalize_label(label.get_text())
+        if not label_text.startswith(label_prefix):
+            continue
+        parent = label.parent
+        if parent is None:
+            continue
+        value_container = parent.find(class_=re.compile(r'\bcol-md-8\b'))
+        if value_container is None:
+            continue
+        return _normalize_label(value_container.get_text(' ', strip=True)) or None
+    return None
+
+
+def extract_date_limite_remise_plis(soup):
+    """Parse « date limite de remise des plis » as a naive datetime (heure de Paris)."""
+    for label in soup.find_all('label'):
+        label_text = _normalize_label(label.get_text())
+        if not label_text.startswith('Date et heure limite de remise des plis'):
+            continue
+        parent = label.parent
+        if parent is None:
+            continue
+        bold = parent.find(class_=re.compile(r'\bgreen\b'))
+        raw = _normalize_label(bold.get_text() if bold else '')
+        match = DATE_LIMITE_REGEX.match(raw)
+        if not match:
+            logging.warning('Unexpected date limite format: %r', raw)
+            return None
+        return datetime.datetime.strptime(match.group(1), '%d/%m/%Y %H:%M')
+    return None
+
+
+def extract_code_cpv(soup):
+    """Return the principal CPV code when present."""
+    for span in soup.find_all(attrs={'data-code-cpv': True}):
+        code = (span.get('data-code-cpv') or '').strip()
+        if code:
+            return code
+    value = extract_labeled_value(soup, 'Code CPV')
+    if not value:
+        return None
+    match = re.match(r'^(\d+)', value)
+    return match.group(1) if match else value
 
 
 def fetch_new_dce():
@@ -141,6 +193,14 @@ def fetch_data(link_annonce):
 
     assert recap_data[3].find('label').text.strip() == "Organisme :"
     organisme = recap_data[3].find('div').find('span').text.strip()
+
+    date_limite_remise_plis = extract_date_limite_remise_plis(soup)
+    entite_achat = extract_labeled_value(soup, "Entité d'Achat")
+    procedure = extract_labeled_value(soup, 'Procédure')
+    categorie_principale = extract_labeled_value(soup, 'Catégorie principale')
+    allotissement = extract_labeled_value(soup, 'Allotissement')
+    lieu_execution = extract_labeled_value(soup, "Lieu d'exécution")
+    code_cpv = extract_code_cpv(soup)
 
     # Get links to files
 
@@ -284,6 +344,13 @@ def fetch_data(link_annonce):
         'intitule': intitule,
         'objet': objet,
         'organisme': organisme,
+        'date_limite_remise_plis': date_limite_remise_plis,
+        'entite_achat': entite_achat,
+        'procedure': procedure,
+        'categorie_principale': categorie_principale,
+        'allotissement': allotissement,
+        'lieu_execution': lieu_execution,
+        'code_cpv': code_cpv,
         'reglement_ref': reglement_ref,
         'filename_reglement': filename_reglement,
         'filename_complement': filename_complement,
