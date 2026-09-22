@@ -146,18 +146,18 @@ def filter_content(tika_result):
     content_list = []
     embedded_resource_paths = []
     for file_data in tika_result:
-        if 'X-TIKA:embedded_resource_path' in file_data:
-            embedded_resource_paths.append(file_data['X-TIKA:embedded_resource_path'])
-        elif 'resourceName' in file_data:
-            embedded_resource_paths.append(file_data['resourceName'])
+        if 'tk:embedded-resource-path' in file_data:
+            embedded_resource_paths.append(file_data['tk:embedded-resource-path'])
+        elif 'tk:resource-name' in file_data:
+            embedded_resource_paths.append(file_data['tk:resource-name'])
 
-        if 'resourceName' in file_data:
-            filename = file_data['resourceName']
+        if 'tk:resource-name' in file_data:
+            filename = file_data['tk:resource-name']
             if is_unwanted_type(filename):
                 continue
 
-        if 'X-TIKA:content' in file_data:  # can also be a image PDF
-            file_content = file_data['X-TIKA:content']
+        if 'tk:content' in file_data:  # can also be a image PDF
+            file_content = file_data['tk:content']
             content_list.append(file_content)
 
     return content_list, embedded_resource_paths

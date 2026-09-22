@@ -1,0 +1,15 @@
+{
+  "parse-context": {
+    "timeout-limits": {
+      "totalTaskTimeoutMillis": 3600000,
+      "progressTimeoutMillis": 3600000
+    }
+  },
+  "pipes": {
+    "numClients": 1,
+    "forkedJvmArgs": ["-Xmx15g"]
+  },
+  "server": {
+    "maxRequestSizeBytes": -1
+  }
+}

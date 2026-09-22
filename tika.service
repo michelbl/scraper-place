@@ -9,7 +9,7 @@ Restart=always
 ExecStartPre=-/usr/bin/docker stop %n
 ExecStartPre=-/usr/bin/docker rm %n
 ExecStartPre=/usr/bin/docker pull apache/tika:latest-full
-ExecStart=/usr/bin/docker run --rm --name %n -p 127.0.0.1:9998:9998 -v /srv/scraper-place/tika-config.xml:/tika-config.xml apache/tika:latest-full --config /tika-config.xml
+ExecStart=/usr/bin/docker run --rm --name %n -p 127.0.0.1:9998:9998 -v /srv/scraper-place/tika-config.json:/tika-config.json apache/tika:latest-full --config /tika-config.json
 
 [Install]
 WantedBy=multi-user.target
