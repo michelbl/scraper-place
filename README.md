@@ -27,7 +27,7 @@ Curiously, a small fraction of the DCE appear in several pages, and this is not 
 
 ### Prerequisites
 
-* Install mongodb 6 (other versions may work).
+* Install mongodb 8 (other versions may work).
 * If you plan to replicate the files on AWS Glacier, create a vault and create a IAM user with upload permission.
 * If you plan to index the data with ElasticSearch, install it.
 * Install [uv](https://docs.astral.sh/uv/) (manages Python 3.14+ and the project environment).

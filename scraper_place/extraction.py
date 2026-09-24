@@ -105,8 +105,10 @@ def extract_dce(dce_data, tika_server_url, s3_resource):
         logging.debug('Extracted content from {}'.format(annonce_id))
 
     except Exception as exception:
-        logging.warning("Exception of type {} occured, aborting DCE {}".format(type(exception).__name__, annonce_id))
-        logging.debug("Exception details: {}".format(exception))
+        detail = str(exception)
+        if len(detail) > 500:
+            detail = detail[:500] + '...'
+        logging.warning("Exception of type %s occured, aborting DCE %s: %s", type(exception).__name__, annonce_id, detail)
         logging.debug(traceback.format_exc())
 
         client = MongoClient()
@@ -123,9 +125,17 @@ def extract_file(file_path, tika_server_url):
     headers = {
         'Accept': 'application/json',
     }
-    with open(file_path, 'rb') as file_object:
-        response = requests.put(url, headers=headers, data=file_object, timeout=3600)
-    assert response.status_code == 200, (response.status_code, response.text)
+    timeout = 3600
+    try:
+        with open(file_path, 'rb') as file_object:
+            response = requests.put(url, headers=headers, data=file_object, timeout=timeout)
+    except requests.Timeout as exception:
+        raise type(exception)("{} on PUT {} for {} after {}s: {}".format(type(exception).__name__, url, file_path, timeout, exception)) from exception
+    if response.status_code != 200:
+        body = response.text
+        if len(body) > 500:
+            body = body[:500] + '...'
+        raise AssertionError("PUT {} for {} returned status {}: {}".format(url, file_path, response.status_code, body))
 
     tika_result = json.loads(response.content)  # better than r.text that takes hours to compute
 

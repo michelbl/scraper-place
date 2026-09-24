@@ -28,6 +28,25 @@ BOAMP_REGEX = r'^http://www\.boamp\.fr/(?:index\.php/)?avis/detail/([\d-]+)(?:/[
 DATE_LIMITE_REGEX = re.compile(r'^(\d{2}/\d{2}/\d{4} \d{2}:\d{2})')
 
 
+def expect_status(response, request_description):
+    if response.status_code == 200:
+        return
+    body = response.text[:300]
+    raise AssertionError('{} returned status {}: {}'.format(request_description, response.status_code, body))
+
+
+def expect_label(block, expected):
+    label = block.find('label') if block is not None else None
+    found = label.text.strip() if label is not None and label.text else None
+    if found != expected:
+        raise AssertionError('expected recap label {!r}, found {!r}'.format(expected, found))
+
+
+def expect_at_most_one(links, name):
+    if len(links) > 1:
+        raise AssertionError('expected at most one {} link, found {}: {}'.format(name, len(links), links))
+
+
 def _normalize_label(text):
     return ' '.join(text.split()).replace('\xa0', ' ').strip()
 
@@ -115,8 +134,10 @@ def process_link(link):
     try:
         annonce_data = fetch_data(link)
     except Exception as exception:
-        logging.warning("Exception of type {} on {}".format(type(exception).__name__, link))
-        logging.debug("Exception details: {}".format(exception))
+        detail = str(exception)
+        if len(detail) > 500:
+            detail = detail[:500] + '...'
+        logging.warning("Exception of type %s on %s: %s", type(exception).__name__, link, detail)
         logging.debug(traceback.format_exc())
         return 0
 
@@ -169,7 +190,7 @@ def fetch_data(link_annonce):
     annonce_id, org_acronym = re.match(LINK_REGEX, link_annonce).groups()
 
     response = requests.get(link_annonce, allow_redirects=False, timeout=600)
-    assert response.status_code == 200
+    expect_status(response, 'consultation page {}'.format(link_annonce))
 
 
     # Get text data
@@ -181,17 +202,15 @@ def fetch_data(link_annonce):
     soup = BeautifulSoup(response.text, 'html.parser')
 
     recap_data = soup.find_all(class_="col-md-10 text-justify")
+    recap_labels = ("Référence :", "Intitulé :", "Objet :", "Organisme :")
+    if len(recap_data) < len(recap_labels):
+        raise AssertionError('expected at least {} recap fields, found {}'.format(len(recap_labels), len(recap_data)))
+    for block, expected_label in zip(recap_data, recap_labels):
+        expect_label(block, expected_label)
 
-    assert recap_data[0].find('label').text.strip() == "Référence :"
     reference = recap_data[0].find('div').find('span').text.strip()
-
-    assert recap_data[1].find('label').text.strip() == "Intitulé :"
     intitule = recap_data[1].find('div').find('span').text.strip()
-
-    assert recap_data[2].find('label').text.strip() == "Objet :"
     objet = recap_data[2].find('div').find('span').text.strip()
-
-    assert recap_data[3].find('label').text.strip() == "Organisme :"
     organisme = recap_data[3].find('div').find('span').text.strip()
 
     date_limite_remise_plis = extract_date_limite_remise_plis(soup)
@@ -205,7 +224,8 @@ def fetch_data(link_annonce):
     # Get links to files
 
     publicite_tabs = soup.find_all(id='pub')
-    assert len(publicite_tabs) == 1
+    if len(publicite_tabs) != 1:
+        raise AssertionError('expected one publication tab (#pub), found {}'.format(len(publicite_tabs)))
     publicite_tab = publicite_tabs[0]
     file_links = publicite_tab.find_all('a')
 
@@ -241,14 +261,13 @@ def fetch_data(link_annonce):
         else:
             raise Exception('Unknown link type {} : {}'.format(link_id, link_href))
 
-    assert len(links_reglements) <= 1
+    expect_at_most_one(links_reglements, 'reglement')
     link_reglement = links_reglements[0] if links_reglements else None
-    assert len(links_dces) <= 1
+    expect_at_most_one(links_dces, 'DCE')
     link_dce = links_dces[0] if links_dces else None
-    # Avis rectificatifs...
-    # assert len(links_avis) <= 1
+    # Avis rectificatifs can appear more than once; the first link is kept.
     link_avis = links_avis[0] if links_avis else None
-    assert len(links_complements) <= 1
+    expect_at_most_one(links_complements, 'complement')
     link_complement = links_complements[0] if links_complements else None
 
 
@@ -266,7 +285,7 @@ def fetch_data(link_annonce):
     file_size_avis = None
     if link_avis:
         response_avis = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_avis), stream=True, timeout=600)
-        assert response_avis.status_code == 200
+        expect_status(response_avis, 'avis download {}'.format(link_avis))
         regex_attachment = r'^attachment; filename=([^;]+);'
         filename_avis = re.match(regex_attachment, response_avis.headers['Content-Disposition']).groups()[0]
 
@@ -281,7 +300,7 @@ def fetch_data(link_annonce):
     if link_reglement:
         reglement_ref = re.match(REGLEMENT_REGEX, link_reglement).groups()[0]
         response_reglement = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_reglement), stream=True, timeout=600)
-        assert response_reglement.status_code == 200
+        expect_status(response_reglement, 'reglement download {}'.format(link_reglement))
         check_content_type(response_reglement.headers['Content-Type'], link_annonce)
         regex_attachment = r'^attachment; filename="([^"]+)";$'
         filename_reglement = re.match(regex_attachment, response_reglement.headers['Content-Disposition']).groups()[0]
@@ -295,7 +314,7 @@ def fetch_data(link_annonce):
     file_size_complement = None
     if link_complement:
         response_complement = requests.get('https://www.marches-publics.gouv.fr{}'.format(link_complement), stream=True, timeout=600)
-        assert response_complement.status_code == 200
+        expect_status(response_complement, 'complement download {}'.format(link_complement))
         regex_attachment = r'^attachment; filename="([^"]+)"'
         filename_complement = re.match(regex_attachment, response_complement.headers['Content-Disposition']).groups()[0]
 
@@ -309,7 +328,7 @@ def fetch_data(link_annonce):
     if link_dce:
         url_dce = 'https://www.marches-publics.gouv.fr/index.php?page=Entreprise.EntrepriseDemandeTelechargementDce&id={}&orgAcronyme={}'.format(annonce_id, org_acronym)
         response_dce = requests.get(url_dce, allow_redirects=False, timeout=600)
-        assert response_dce.status_code == 200
+        expect_status(response_dce, 'DCE download form {}'.format(annonce_id))
         page_state = re.search(PAGE_STATE_REGEX, response_dce.text).groups()[0]
         cookie = response_dce.headers['Set-Cookie']
 
@@ -319,7 +338,7 @@ def fetch_data(link_annonce):
             'ctl0$CONTENU_PAGE$EntrepriseFormulaireDemande$RadioGroup': 'ctl0$CONTENU_PAGE$EntrepriseFormulaireDemande$choixAnonyme',
         }
         response_dce2 = requests.post(url_dce, headers={'Cookie': cookie}, data=data, allow_redirects=False, timeout=600)
-        assert response_dce2.status_code == 200
+        expect_status(response_dce2, 'DCE anonymous download choice {}'.format(annonce_id))
         page_state = re.search(PAGE_STATE_REGEX, response_dce2.text).groups()[0]
 
         data = {
@@ -327,7 +346,7 @@ def fetch_data(link_annonce):
             'PRADO_POSTBACK_TARGET': 'ctl0$CONTENU_PAGE$EntrepriseDownloadDce$completeDownload',
         }
         response_dce3 = requests.post(url_dce, headers={'Cookie': cookie}, data=data, stream=True, timeout=600)
-        assert response_dce3.status_code == 200
+        expect_status(response_dce3, 'DCE file download {}'.format(annonce_id))
 
         check_content_type(response_dce3.headers['Content-Type'], link_annonce)
         regex_attachment = r'^attachment; filename="([^"]+)";$'
@@ -370,7 +389,7 @@ def init():
 
     # get page state
     response = requests.get(URL_SEARCH, allow_redirects=False, timeout=600)
-    assert response.status_code == 200, response.status_code
+    expect_status(response, 'search page')
     page_state = re.search(PAGE_STATE_REGEX, response.text).groups()[0]
     cookie = response.headers['Set-Cookie']
 
@@ -387,7 +406,7 @@ def init():
         allow_redirects=False,
         timeout=600,
     )
-    assert response.status_code == 200, response.status_code
+    expect_status(response, 'search page size')
     links = extract_links(response, LINK_REGEX)
     page_state = re.search(PAGE_STATE_REGEX, response.text).groups()[0]
 
@@ -415,7 +434,7 @@ def next_page(page_state, cookie, previous_links):
     if response.status_code == 500:
         raise NoMoreResultsException()
 
-    assert response.status_code == 200
+    expect_status(response, 'search next page')
     links = extract_links(response, LINK_REGEX)
     page_state_new_results = re.search(PAGE_STATE_REGEX, response.text)
     if not page_state_new_results:

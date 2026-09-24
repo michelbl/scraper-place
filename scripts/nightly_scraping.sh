@@ -2,6 +2,13 @@
 #set -o xtrace
 set -o errexit
 
+LOCK_FILE=/srv/scraper-place/nightly.lock
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+  printf '%s WARNING: nightly scraping already running, not starting another\n' "$(date '+%Y-%m-%d %H:%M:%S')" >> /var/log/scraper-place/scraper-place.log
+  exit 0
+fi
+
 PYTHON_PATH=/srv/scraper-place/.venv/bin/python
 SCRAPER_PLACE_PATH=/srv/scraper-place/scraper_place
 $PYTHON_PATH $SCRAPER_PLACE_PATH/fetch.py
